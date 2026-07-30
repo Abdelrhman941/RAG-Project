@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "A backend service for RAG (Retrieval-Augmented Generation) applications."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["fastapi[standard]>=0.141.1", "pydantic-settings>=2.14.2"]
+dependencies = [
+    "fastapi[standard]>=0.141.1",
+    "pydantic-settings>=2.14.2",
+]
 
 [dependency-groups]
 dev = ["mypy>=2.3.0", "pre-commit>=4.6.1", "pytest>=9.1.1", "ruff>=0.16.0"]
@@ -14,7 +17,18 @@ target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "B"]
+ignore = ["B008"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Body",
+  "fastapi.Header",
+  "Depends",
+]
 
 [tool.mypy]
 python_version = "3.12"
