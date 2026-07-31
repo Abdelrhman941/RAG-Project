@@ -32,3 +32,18 @@ class UnsupportedDocumentTypeError(DocumentError):
 
 class ParsingError(DocumentError):
     """Raised when a parser fails to extract text from a file."""
+
+
+class UnsupportedChunkingStrategyError(DocumentError):
+    """Raised when no chunker is registered for a chunking strategy."""
+
+    def __init__(self, strategy: str):
+        self.strategy = strategy
+        super().__init__(f"No chunker registered for strategy '{strategy}'.")
+
+
+class InvalidChunkingParametersError(DocumentError):
+    """Raised when the resolved chunk_size/overlap combination is invalid."""
+
+    def __init__(self, message: str):
+        super().__init__(message)

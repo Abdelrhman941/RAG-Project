@@ -1,5 +1,5 @@
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -9,7 +9,9 @@ from .core import (
     DocumentNotFoundError,
     EmptyFileError,
     FileTooLargeError,
+    InvalidChunkingParametersError,
     ParsingError,
+    UnsupportedChunkingStrategyError,
     UnsupportedDocumentTypeError,
     get_settings,
 )
@@ -63,6 +65,20 @@ async def unsupported_type_handler(
 @app.exception_handler(ParsingError)
 async def parsing_error_handler(request: Request, exc: ParsingError) -> JSONResponse:
     return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
+@app.exception_handler(InvalidChunkingParametersError)
+async def invalid_chunking_parameters_handler(
+    request: Request, exc: InvalidChunkingParametersError
+) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@app.exception_handler(UnsupportedChunkingStrategyError)
+async def unsupported_chunking_strategy_handler(
+    request: Request, exc: UnsupportedChunkingStrategyError
+) -> JSONResponse:
+    return JSONResponse(status_code=501, content={"detail": str(exc)})
 
 
 app.include_router(api_v1_router)
