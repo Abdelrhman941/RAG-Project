@@ -1,4 +1,4 @@
-.PHONY: backend-sync backend-run frontend-install frontend-run fix check pre-commit
+.PHONY: backend-sync backend-run backend-test frontend-install frontend-run fix check pre-commit
 
 # ==========================================================
 # Backend
@@ -8,6 +8,9 @@ backend-sync:
 
 backend-run:
 	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0
+
+backend-test:
+	cd backend && uv run pytest
 
 # ==========================================================
 # Frontend
