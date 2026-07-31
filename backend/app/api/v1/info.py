@@ -2,10 +2,10 @@ from fastapi import APIRouter
 
 from ..deps import SettingsDep
 
-health_router = APIRouter(prefix="", tags=["Health"])
+info_router = APIRouter(prefix="", tags=["Health"])
 
 
-@health_router.get("/")
+@info_router.get("/")
 def root(settings: SettingsDep) -> dict[str, str]:
     return {
         "app": settings.APP_NAME,
@@ -14,6 +14,6 @@ def root(settings: SettingsDep) -> dict[str, str]:
     }
 
 
-@health_router.get("/health")
+@info_router.get("/health")
 def health_check() -> dict[str, str]:
     return {"status": "healthy"}

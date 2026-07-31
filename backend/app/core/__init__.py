@@ -1,6 +1,13 @@
 from .config import Settings, get_settings
 from .enums.document import DocumentExtension, DocumentStatus
-from .exceptions import DocumentError, EmptyFileError, FileTooLargeError
+from .exceptions import (
+    DocumentError,
+    DocumentNotFoundError,
+    EmptyFileError,
+    FileTooLargeError,
+    ParsingError,
+    UnsupportedDocumentTypeError,
+)
 
 __all__ = [
     "Settings",
@@ -10,4 +17,7 @@ __all__ = [
     "DocumentError",
     "EmptyFileError",
     "FileTooLargeError",
+    "DocumentNotFoundError",
+    "UnsupportedDocumentTypeError",
+    "ParsingError",
 ]
