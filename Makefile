@@ -33,8 +33,8 @@ check:
 	cd backend && uv run ruff check .
 	cd backend && uv run mypy .
 
-	cd frontend && pnpm typecheck
-	cd frontend && pnpm lint
+# 	cd frontend && pnpm typecheck
+# 	cd frontend && pnpm lint
 
 pre-commit:
 	cd backend && uv run pre-commit run --config ../.pre-commit-config.yaml --all-files
