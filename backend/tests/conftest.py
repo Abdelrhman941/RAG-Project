@@ -1,7 +1,7 @@
 import importlib
 import io
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Callable, Iterator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -24,6 +24,11 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     with TestClient(main_module.app) as test_client:
         yield test_client
     get_settings.cache_clear()
+
+
+@pytest.fixture()
+def anyio_backend() -> str:
+    return "asyncio"
 
 
 @pytest.fixture()
