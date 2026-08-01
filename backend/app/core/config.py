@@ -4,6 +4,8 @@ from pathlib import Path
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .enums.embedding import EmbeddingProviderName
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -15,6 +17,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.1.0"
     APP_DESCRIPTION: str = "A RAG application"
     ENVIRONMENT: str = "local"
+    EMBEDDING_DEVICE: str = "cpu"
 
     # ----- File Upload -----
     MAX_FILE_SIZE_MB: int = 50
@@ -23,6 +26,12 @@ class Settings(BaseSettings):
     # ----- Chunking -----
     DEFAULT_CHUNK_SIZE: int = 1000
     DEFAULT_CHUNK_OVERLAP: int = 200
+
+    # ----- Embedding -----
+    EMBEDDING_PROVIDER: EmbeddingProviderName = (
+        EmbeddingProviderName.SENTENCE_TRANSFORMER
+    )
+    EMBEDDING_MODEL: str = "intfloat/multilingual-e5-small"
 
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:

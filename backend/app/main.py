@@ -7,12 +7,14 @@ from fastapi.responses import JSONResponse
 from .api.v1 import api_v1_router
 from .core import (
     DocumentNotFoundError,
+    EmbeddingError,
     EmptyFileError,
     FileTooLargeError,
     InvalidChunkingParametersError,
     ParsingError,
     UnsupportedChunkingStrategyError,
     UnsupportedDocumentTypeError,
+    UnsupportedEmbeddingProviderError,
     get_settings,
 )
 
@@ -79,6 +81,20 @@ async def unsupported_chunking_strategy_handler(
     request: Request, exc: UnsupportedChunkingStrategyError
 ) -> JSONResponse:
     return JSONResponse(status_code=501, content={"detail": str(exc)})
+
+
+@app.exception_handler(EmbeddingError)
+async def embedding_error_handler(
+    request: Request, exc: EmbeddingError
+) -> JSONResponse:
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
+@app.exception_handler(UnsupportedEmbeddingProviderError)
+async def unsupported_embedding_provider_handler(
+    request: Request, exc: UnsupportedEmbeddingProviderError
+) -> JSONResponse:
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
 
 
 app.include_router(api_v1_router)

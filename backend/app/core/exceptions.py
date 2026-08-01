@@ -47,3 +47,15 @@ class InvalidChunkingParametersError(DocumentError):
 
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class UnsupportedEmbeddingProviderError(DocumentError):
+    """Raised when no embedding provider is registered for the configured name."""
+
+    def __init__(self, provider: str):
+        self.provider = provider
+        super().__init__(f"No embedding provider registered for '{provider}'.")
+
+
+class EmbeddingError(DocumentError):
+    """Raised when generating embeddings for a document fails."""

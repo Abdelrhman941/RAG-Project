@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from ..deps import SettingsDep
 
-info_router = APIRouter(prefix="", tags=["Health"])
+info_router = APIRouter(prefix="", tags=["System"])
 
 
 @info_router.get("/")
