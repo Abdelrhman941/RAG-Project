@@ -11,6 +11,7 @@ from reportlab.pdfgen import canvas
 from app.core import get_settings
 from app.core.enums.vector_store import DistanceMetric
 from app.embedders import BaseEmbeddingProvider
+from app.retrieval import SearchResult
 from app.schemas import PointData
 from app.vectorstores import BaseVectorStore
 
@@ -37,7 +38,7 @@ class FakeVectorStore(BaseVectorStore):
     """In-memory vector store used to test the indexing pipeline without Qdrant."""
 
     def __init__(self) -> None:
-        self.collections: dict[str, dict] = {}
+        self.collections: dict[str, dict[str, object]] = {}
         self.points: dict[str, list[PointData]] = defaultdict(list)
         self.deleted_documents: list[tuple[str, str]] = []
 
@@ -56,6 +57,16 @@ class FakeVectorStore(BaseVectorStore):
             "dimension": dimension,
             "distance": distance,
         }
+
+    async def search(
+        self,
+        collection_name: str,
+        vector: Sequence[float],
+        top_k: int,
+        *,
+        min_score: float | None = None,
+    ) -> list[SearchResult]:
+        return []
 
     async def upsert(
         self,

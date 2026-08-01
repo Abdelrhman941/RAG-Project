@@ -1,6 +1,7 @@
 import uuid
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import FakeVectorStore
@@ -12,7 +13,7 @@ def _upload_txt(client: TestClient, content: str = "hello world") -> str:
         files={"file": ("sample.txt", content.encode("utf-8"), "text/plain")},
     )
     assert response.status_code == 201, response.text
-    return response.json()["id"]
+    return str(response.json()["id"])
 
 
 def test_index_endpoint_returns_201_and_persists_points(
@@ -29,7 +30,7 @@ def test_index_endpoint_returns_201_and_persists_points(
     assert body["total_chunks"] == body["indexed_points"] > 0
     assert body["dimension"] == 4
     assert body["embedding_model"] == "fake-embedding-model"
-    assert body["status"] == "completed"
+    assert body["status"] == "indexed"
 
     # And they actually landed in the store.
     stored = fake_vector_store.points["documents"]
@@ -79,7 +80,7 @@ def test_index_invalid_uuid_returns_422(client: TestClient) -> None:
 
 
 def test_index_empty_document_bubbles_as_500(
-    client: TestClient, tmp_path: Path, monkeypatch
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A document whose parsed text yields zero chunks should not silently succeed."""
     # Directly drop an empty .txt into the upload dir so we bypass the

@@ -44,7 +44,7 @@ def test_factory_raises_for_unknown_provider() -> None:
 
     with pytest.raises(UnsupportedVectorStoreProviderError):
         get_vector_store(
-            provider=_Bogus(),  # type: ignore[arg-type]
+            provider=_Bogus(),
             host="localhost",
             port=6333,
             grpc_port=6334,
