@@ -59,3 +59,36 @@ class UnsupportedEmbeddingProviderError(DocumentError):
 
 class EmbeddingError(DocumentError):
     """Raised when generating embeddings for a document fails."""
+
+
+# ---------- Indexing / Vector Store ----------
+class VectorStoreError(DocumentError):
+    """Base exception for vector store failures."""
+
+
+class UnsupportedVectorStoreProviderError(VectorStoreError):
+    """Raised when no vector store is registered for the configured provider."""
+
+    def __init__(self, provider: str):
+        self.provider = provider
+        super().__init__(f"No vector store registered for '{provider}'.")
+
+
+class VectorStoreUnavailableError(VectorStoreError):
+    """Raised when the backing vector store is unreachable (network/health)."""
+
+
+class VectorDimensionMismatchError(VectorStoreError):
+    """Raised when the embedding dimension does not match the collection's."""
+
+    def __init__(self, expected: int, actual: int):
+        self.expected = expected
+        self.actual = actual
+        super().__init__(
+            f"Embedding dimension {actual} does not match collection "
+            f"dimension {expected}."
+        )
+
+
+class IndexingError(VectorStoreError):
+    """Raised when persisting points to the vector store fails."""

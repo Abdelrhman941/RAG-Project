@@ -10,11 +10,15 @@ from .core import (
     EmbeddingError,
     EmptyFileError,
     FileTooLargeError,
+    IndexingError,
     InvalidChunkingParametersError,
     ParsingError,
     UnsupportedChunkingStrategyError,
     UnsupportedDocumentTypeError,
     UnsupportedEmbeddingProviderError,
+    UnsupportedVectorStoreProviderError,
+    VectorDimensionMismatchError,
+    VectorStoreUnavailableError,
     get_settings,
 )
 
@@ -93,6 +97,32 @@ async def embedding_error_handler(
 @app.exception_handler(UnsupportedEmbeddingProviderError)
 async def unsupported_embedding_provider_handler(
     request: Request, exc: UnsupportedEmbeddingProviderError
+) -> JSONResponse:
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
+@app.exception_handler(VectorStoreUnavailableError)
+async def vector_store_unavailable_handler(
+    request: Request, exc: VectorStoreUnavailableError
+) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+@app.exception_handler(VectorDimensionMismatchError)
+async def vector_dimension_mismatch_handler(
+    request: Request, exc: VectorDimensionMismatchError
+) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+
+@app.exception_handler(IndexingError)
+async def indexing_error_handler(request: Request, exc: IndexingError) -> JSONResponse:
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
+@app.exception_handler(UnsupportedVectorStoreProviderError)
+async def unsupported_vector_store_provider_handler(
+    request: Request, exc: UnsupportedVectorStoreProviderError
 ) -> JSONResponse:
     return JSONResponse(status_code=500, content={"detail": str(exc)})
 

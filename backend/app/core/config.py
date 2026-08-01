@@ -5,6 +5,7 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .enums.embedding import EmbeddingProviderName
+from .enums.vector_store import DistanceMetric, VectorStoreProvider
 
 
 class Settings(BaseSettings):
@@ -33,6 +34,16 @@ class Settings(BaseSettings):
     )
     EMBEDDING_MODEL: str = "intfloat/multilingual-e5-small"
 
+    # ----- Vector Store -----
+    VECTOR_STORE_PROVIDER: VectorStoreProvider = VectorStoreProvider.QDRANT
+    QDRANT_HOST: str = "localhost"
+    QDRANT_PORT: int = 6333
+    QDRANT_GRPC_PORT: int = 6334
+    QDRANT_PREFER_GRPC: bool = False
+    QDRANT_API_KEY: str | None = None
+    QDRANT_COLLECTION: str = "documents"
+    DISTANCE_METRIC: DistanceMetric = DistanceMetric.COSINE
+
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:
         return self.MAX_FILE_SIZE_MB * 1048576
@@ -49,6 +60,14 @@ class Settings(BaseSettings):
             raise ValueError(
                 "DEFAULT_CHUNK_OVERLAP must be smaller than DEFAULT_CHUNK_SIZE."
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_vector_store_settings(self) -> "Settings":
+        if not self.QDRANT_COLLECTION.strip():
+            raise ValueError("QDRANT_COLLECTION must not be empty.")
+        if not (1 <= self.QDRANT_PORT <= 65535):
+            raise ValueError("QDRANT_PORT must be a valid TCP port.")
         return self
 
 

@@ -10,9 +10,9 @@ class DocumentExtension(str, Enum):
 
 class DocumentStatus(str, Enum):
     UPLOADED = "uploaded"
+    PARSING = "parsing"
+    CHUNKING = "chunking"
+    EMBEDDING = "embedding"
+    INDEXED = "indexed"
     COMPLETED = "completed"
     FAILED = "failed"
-    # PARSING = "parsing"
-    # CHUNKING = "chunking"
-    # EMBEDDING = "embedding"
-    # INDEXING = "indexing"

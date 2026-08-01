@@ -7,6 +7,10 @@ backend-sync:
 	cd backend && uv lock && uv sync
 
 backend-run:
+	cd backend && docker compose up -d qdrant
+	@echo "Waiting for Qdrant to start..."
+	@sleep 3
+	@explorer.exe "http://localhost:6333/dashboard#/collections" || python3 -m webbrowser "http://localhost:6333/dashboard#/collections"
 	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0
 
 backend-test:
