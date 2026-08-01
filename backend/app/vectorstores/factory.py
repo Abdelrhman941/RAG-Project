@@ -17,7 +17,9 @@ def get_vector_store(
     """Build (and cache) a vector store for the given configuration.
 
     `lru_cache` keeps a single client instance per unique configuration
-    so we don't open a new gRPC/HTTP connection on every request.
+    so we don't open a new gRPC/HTTP connection on every request. The
+    Sprint 8 `search()` capability is exposed transparently through the
+    same `BaseVectorStore` interface — no factory change was required.
     """
     if provider == VectorStoreProvider.QDRANT:
         return QdrantVectorStore(

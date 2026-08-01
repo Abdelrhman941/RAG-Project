@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from .api.v1 import api_v1_router
 from .core import (
+    CollectionNotFoundError,
     DocumentNotFoundError,
     EmbeddingError,
     EmptyFileError,
@@ -13,6 +14,7 @@ from .core import (
     IndexingError,
     InvalidChunkingParametersError,
     ParsingError,
+    RetrievalError,
     UnsupportedChunkingStrategyError,
     UnsupportedDocumentTypeError,
     UnsupportedEmbeddingProviderError,
@@ -123,6 +125,21 @@ async def indexing_error_handler(request: Request, exc: IndexingError) -> JSONRe
 @app.exception_handler(UnsupportedVectorStoreProviderError)
 async def unsupported_vector_store_provider_handler(
     request: Request, exc: UnsupportedVectorStoreProviderError
+) -> JSONResponse:
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
+# ---------- Retrieval ----------
+@app.exception_handler(CollectionNotFoundError)
+async def collection_not_found_handler(
+    request: Request, exc: CollectionNotFoundError
+) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(RetrievalError)
+async def retrieval_error_handler(
+    request: Request, exc: RetrievalError
 ) -> JSONResponse:
     return JSONResponse(status_code=500, content={"detail": str(exc)})
 

@@ -1,17 +1,19 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
-from ..core.enums.vector_store import DistanceMetric
+from ..core import DistanceMetric
+from ..retrieval import SearchResult
 from ..schemas import PointData
 
 
 class BaseVectorStore(ABC):
     """Interface every vector store implementation must satisfy.
 
-    Kept intentionally narrow for Sprint 7: this sprint only stores data.
-    Similarity search lives in Sprint 8 (Retrieval) and will be
-    added as a separate method (`search`) later.
-    Adapters MUST NOT leak vendor-specific types across this boundary.
+    Sprint 7 introduced write-side operations (create / upsert / delete).
+    Sprint 8 (Retrieval) extends this contract with `search`, the ONLY
+    read-side operation. Adapters MUST NOT leak vendor-specific types
+    across this boundary: `search` returns provider-agnostic
+    `SearchResult` domain models.
     """
 
     # ---- Collection lifecycle ----
@@ -47,6 +49,26 @@ class BaseVectorStore(ABC):
 
         Used during re-indexing so the same document does not
         accumulate duplicate chunks across runs.
+        """
+
+    # ---- Retrieval ----
+    @abstractmethod
+    async def search(
+        self,
+        collection_name: str,
+        vector: Sequence[float],
+        top_k: int,
+        *,
+        min_score: float | None = None,
+    ) -> list[SearchResult]:
+        """Return the top-k most similar points for the given query vector.
+
+        Results are ordered by descending similarity as computed by the
+        underlying engine — the caller does NOT re-rank. `min_score` is
+        an optional lower bound: implementations MUST forward it to the
+        engine (or filter server-side) so hits below the threshold are
+        never returned. Adapters MUST map their native hit type into
+        `SearchResult` before returning.
         """
 
     # ---- Health ----

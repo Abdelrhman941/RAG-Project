@@ -4,6 +4,7 @@ from .embedding import EmbeddingResponse
 from .indexing import IndexingResponse
 from .parsed_document import ParsedDocument
 from .point import PointData, PointPayload
+from .retrieval import RetrievalRequest, RetrievalResponse, RetrievedChunk
 
 __all__ = [
     "Chunk",
@@ -15,4 +16,7 @@ __all__ = [
     "ParsedDocument",
     "PointData",
     "PointPayload",
+    "RetrievalRequest",
+    "RetrievalResponse",
+    "RetrievedChunk",
 ]

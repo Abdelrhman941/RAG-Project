@@ -1,16 +1,20 @@
 import logging
 from collections.abc import Sequence
+from uuid import UUID
 
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models as qmodels
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
 
 from ..core import (
+    CollectionNotFoundError,
     DistanceMetric,
     IndexingError,
+    RetrievalError,
     VectorDimensionMismatchError,
     VectorStoreUnavailableError,
 )
+from ..retrieval import SearchResult
 from ..schemas import PointData
 from .base import BaseVectorStore
 
@@ -28,7 +32,8 @@ class QdrantVectorStore(BaseVectorStore):
 
     Owns the QdrantClient lifecycle and is the ONLY place in the codebase
     that imports `qdrant_client`. Any operation that would leak a Qdrant
-    type across the interface (e.g. returning a `PointStruct`) is a bug.
+    type across the interface (e.g. returning a `PointStruct` or a
+    `ScoredPoint`) is a bug.
     """
 
     def __init__(
@@ -148,6 +153,65 @@ class QdrantVectorStore(BaseVectorStore):
         except (ResponseHandlingException, UnexpectedResponse) as exc:
             # A missing collection is fine on delete: nothing to remove.
             logger.warning("Delete-by-document skipped: %s", exc)
+
+    # ---- Retrieval (Sprint 8) ----
+    async def search(
+        self,
+        collection_name: str,
+        vector: Sequence[float],
+        top_k: int,
+        *,
+        min_score: float | None = None,
+    ) -> list[SearchResult]:
+        """Run a top-k semantic-similarity query against Qdrant.
+
+        Uses `query_points` (the modern Qdrant search API) and maps
+        each returned `ScoredPoint` into a domain-level `SearchResult`.
+        Ranking is done entirely by Qdrant; we never re-sort here.
+        """
+        if top_k <= 0:
+            return []
+
+        try:
+            response = await self._client.query_points(
+                collection_name=collection_name,
+                query=list(vector),
+                limit=top_k,
+                score_threshold=min_score,
+                with_payload=True,
+                with_vectors=False,
+            )
+        except UnexpectedResponse as exc:
+            # Qdrant returns 404 when the collection is missing.
+            if getattr(exc, "status_code", None) == 404:
+                raise CollectionNotFoundError(collection_name) from exc
+            raise RetrievalError(f"Qdrant search failed: {exc}") from exc
+        except ResponseHandlingException as exc:
+            raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
+
+        return [self._to_search_result(point) for point in response.points]
+
+    @staticmethod
+    def _to_search_result(point: qmodels.ScoredPoint) -> SearchResult:
+        """Map a Qdrant `ScoredPoint` into the provider-agnostic domain model.
+
+        Kept as a small static helper so the mapping is trivially unit-
+        testable without spinning up an AsyncQdrantClient.
+        """
+        payload = point.payload or {}
+        try:
+            return SearchResult(
+                document_id=UUID(str(payload["document_id"])),
+                chunk_id=UUID(str(payload["chunk_id"])),
+                chunk_index=int(payload["chunk_index"]),
+                page_number=int(payload["page_number"]),
+                score=float(point.score),
+                content=str(payload["content"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise RetrievalError(
+                f"Malformed point payload for id={point.id}: {exc}"
+            ) from exc
 
     # ---- Health ----
     async def health_check(self) -> bool:

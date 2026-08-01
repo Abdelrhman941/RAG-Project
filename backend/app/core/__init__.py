@@ -4,6 +4,7 @@ from .enums.document import DocumentExtension, DocumentStatus
 from .enums.embedding import EmbeddingProviderName
 from .enums.vector_store import DistanceMetric, VectorStoreProvider
 from .exceptions import (
+    CollectionNotFoundError,
     DocumentError,
     DocumentNotFoundError,
     EmbeddingError,
@@ -12,6 +13,7 @@ from .exceptions import (
     IndexingError,
     InvalidChunkingParametersError,
     ParsingError,
+    RetrievalError,
     UnsupportedChunkingStrategyError,
     UnsupportedDocumentTypeError,
     UnsupportedEmbeddingProviderError,
@@ -23,6 +25,7 @@ from .exceptions import (
 
 __all__ = [
     "ChunkingStrategy",
+    "CollectionNotFoundError",
     "DistanceMetric",
     "DocumentError",
     "DocumentExtension",
@@ -35,6 +38,7 @@ __all__ = [
     "IndexingError",
     "InvalidChunkingParametersError",
     "ParsingError",
+    "RetrievalError",
     "Settings",
     "UnsupportedChunkingStrategyError",
     "UnsupportedDocumentTypeError",

@@ -92,3 +92,20 @@ class VectorDimensionMismatchError(VectorStoreError):
 
 class IndexingError(VectorStoreError):
     """Raised when persisting points to the vector store fails."""
+
+
+# ---------- Retrieval ----------
+class RetrievalError(VectorStoreError):
+    """Raised when a semantic-search retrieval attempt fails."""
+
+
+class CollectionNotFoundError(VectorStoreError):
+    """Raised when searching a collection that does not exist yet.
+
+    Distinct from `VectorStoreUnavailableError`: the store is reachable,
+    but the caller asked for a collection that hasn't been created.
+    """
+
+    def __init__(self, collection_name: str):
+        self.collection_name = collection_name
+        super().__init__(f"Collection '{collection_name}' does not exist.")

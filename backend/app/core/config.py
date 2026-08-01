@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     QDRANT_COLLECTION: str = "documents"
     DISTANCE_METRIC: DistanceMetric = DistanceMetric.COSINE
 
+    # ----- Retrieval -----
+    DEFAULT_TOP_K: int = 5
+    MAX_TOP_K: int = 20
+    MIN_SCORE: float = 0.10
+
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:
         return self.MAX_FILE_SIZE_MB * 1048576
@@ -68,6 +73,18 @@ class Settings(BaseSettings):
             raise ValueError("QDRANT_COLLECTION must not be empty.")
         if not (1 <= self.QDRANT_PORT <= 65535):
             raise ValueError("QDRANT_PORT must be a valid TCP port.")
+        return self
+
+    @model_validator(mode="after")
+    def validate_retrieval_settings(self) -> "Settings":
+        if self.DEFAULT_TOP_K <= 0:
+            raise ValueError("DEFAULT_TOP_K must be greater than 0.")
+        if self.MAX_TOP_K <= 0:
+            raise ValueError("MAX_TOP_K must be greater than 0.")
+        if self.DEFAULT_TOP_K > self.MAX_TOP_K:
+            raise ValueError("DEFAULT_TOP_K must be less than or equal to MAX_TOP_K.")
+        if not (0.0 <= self.MIN_SCORE <= 1.0):
+            raise ValueError("MIN_SCORE must be between 0.0 and 1.0.")
         return self
 
 
