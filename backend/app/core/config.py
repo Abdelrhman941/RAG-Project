@@ -1,7 +1,7 @@
 from functools import cache
 from pathlib import Path
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .enums.embedding import EmbeddingProviderName
@@ -10,7 +10,9 @@ from .enums.vector_store import DistanceMetric, VectorStoreProvider
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=Path(__file__).resolve().parents[2] / ".env", env_file_encoding="utf-8"
+        env_file=Path(__file__).resolve().parents[2] / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
 
     # ----- Application -----
@@ -48,6 +50,13 @@ class Settings(BaseSettings):
     DEFAULT_TOP_K: int = 5
     MAX_TOP_K: int = 20
     MIN_SCORE: float = 0.10
+
+    # --- LLM layer ---
+    LLM_PROVIDER: str = Field(default="groq")
+    GROQ_API_KEY: str = Field(default="")
+    GROQ_MODEL: str = Field(default="llama-3.3-70b-versatile")
+    LLM_TEMPERATURE: float = Field(default=0.7, ge=0.0, le=2.0)
+    LLM_MAX_TOKENS: int = Field(default=1024, gt=0)
 
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:

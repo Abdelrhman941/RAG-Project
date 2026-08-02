@@ -12,6 +12,7 @@ from .exceptions import (
     FileTooLargeError,
     IndexingError,
     InvalidChunkingParametersError,
+    LLMProviderError,
     ParsingError,
     RetrievalError,
     UnsupportedChunkingStrategyError,
@@ -48,5 +49,6 @@ __all__ = [
     "VectorStoreError",
     "VectorStoreProvider",
     "VectorStoreUnavailableError",
+    "LLMProviderError",
     "get_settings",
 ]

@@ -109,3 +109,34 @@ class CollectionNotFoundError(VectorStoreError):
     def __init__(self, collection_name: str):
         self.collection_name = collection_name
         super().__init__(f"Collection '{collection_name}' does not exist.")
+
+
+# ---------- LLM-layer ----------
+"""
+LLM-layer exceptions.
+
+Design: split into a config-time error (bad setup, caught at startup)
+vs a runtime error (bad SDK call, caught per-request by the service layer).
+Keep these additive to your existing exceptions.py — just append.
+"""
+
+
+class LLMError(Exception):
+    """Base class for all LLM-layer errors."""
+
+
+class LLMConfigError(LLMError):
+    """Raised for invalid/missing configuration (e.g. unknown provider)."""
+
+
+class UnknownProviderError(LLMConfigError):
+    """Raised by the factory when LLM_PROVIDER doesn't match any adapter."""
+
+
+class LLMProviderError(LLMError):
+    """
+    Raised when the underlying provider SDK fails or returns something
+    the app can't use (network error, empty completion, rate limit, etc).
+    Provider adapters must catch their SDK's native exceptions and
+    re-raise this instead, so callers never need to know about Groq.
+    """
