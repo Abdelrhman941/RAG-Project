@@ -10,7 +10,7 @@ backend-run:
 	cd backend && docker compose up -d qdrant
 	@echo "Waiting for Qdrant to start..."
 	@sleep 3
-	@explorer.exe "http://localhost:6333/dashboard#/collections" || python3 -m webbrowser "http://localhost:6333/dashboard#/collections"
+	@-cmd.exe /c start "http://localhost:6333/dashboard#/collections" 2>/dev/null || python3 -m webbrowser "http://localhost:6333/dashboard#/collections" >/dev/null 2>&1 || true
 	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0
 
 backend-test:

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .chat import chat_router
 from .chunk import chunk_router
 from .embed import embed_router
 from .index import index_router
@@ -16,5 +17,6 @@ api_v1_router.include_router(chunk_router)
 api_v1_router.include_router(embed_router)
 api_v1_router.include_router(index_router)
 api_v1_router.include_router(retrieval_router)
+api_v1_router.include_router(chat_router)
 
 __all__ = ["api_v1_router"]

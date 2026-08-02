@@ -13,6 +13,7 @@ from .core import (
     FileTooLargeError,
     IndexingError,
     InvalidChunkingParametersError,
+    LLMProviderError,
     ParsingError,
     RetrievalError,
     UnsupportedChunkingStrategyError,
@@ -140,6 +141,14 @@ async def collection_not_found_handler(
 @app.exception_handler(RetrievalError)
 async def retrieval_error_handler(
     request: Request, exc: RetrievalError
+) -> JSONResponse:
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
+# ---------- Generation ----------
+@app.exception_handler(LLMProviderError)
+async def llm_provider_error_handler(
+    request: Request, exc: LLMProviderError
 ) -> JSONResponse:
     return JSONResponse(status_code=500, content={"detail": str(exc)})
 

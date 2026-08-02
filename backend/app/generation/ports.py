@@ -6,7 +6,7 @@ Fields here mirror the ACTUAL retrieval chunk output from Sprint 7/8
 No `id` / `text` / `source` placeholders — this matches the real payload.
 """
 
-from typing import Protocol, runtime_checkable
+from typing import Protocol, Sequence, runtime_checkable
 
 from pydantic import UUID4
 
@@ -24,12 +24,14 @@ class RetrievedChunk(Protocol):
 
 
 class RetrievalServicePort(Protocol):
-    async def retrieve(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
+    async def retrieve(self, query: str, top_k: int = 5) -> Sequence[RetrievedChunk]:
         """Return top_k chunks for the query, best-first. No reordering downstream."""
         ...
 
 
 class PromptBuilderPort(Protocol):
-    def build(self, question: str, chunks: list[RetrievedChunk]) -> list[ChatMessage]:
+    def build(
+        self, question: str, chunks: Sequence[RetrievedChunk]
+    ) -> list[ChatMessage]:
         """Build the chat messages to send to the LLM provider."""
         ...

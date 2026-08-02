@@ -83,15 +83,13 @@ class PromptBuilder:
     # Public API
     # ------------------------------------------------------------------
     def build(
-        self,
-        query: str,
-        chunks: Sequence[RetrievedChunkLike],
+        self, question: str, chunks: Sequence[RetrievedChunkLike]
     ) -> list[ChatMessage]:
         """Return the ordered list of messages to send to the LLM.
 
         Parameters
         ----------
-        query:
+        question:
             The user question. Must be non-empty after stripping.
         chunks:
             Retrieved evidence, already ranked by the retrieval layer.
@@ -103,11 +101,11 @@ class PromptBuilder:
         A list containing exactly one system message followed by exactly
         one user message.
         """
-        cleaned_query = query.strip()
-        if not cleaned_query:
-            raise ValueError("query must not be empty or whitespace-only.")
+        cleaned_question = question.strip()
+        if not cleaned_question:
+            raise ValueError("question must not be empty or whitespace-only.")
 
-        user_content = self._compose_user_message(cleaned_query, chunks)
+        user_content = self._compose_user_message(cleaned_question, chunks)
 
         return [
             ChatMessage(role=ChatRole.SYSTEM, content=self._system_prompt),
@@ -119,13 +117,13 @@ class PromptBuilder:
     # ------------------------------------------------------------------
     def _compose_user_message(
         self,
-        query: str,
+        question: str,
         chunks: Sequence[RetrievedChunkLike],
     ) -> str:
         context_block = self._format_context(chunks)
         return (
             f"CONTEXT:\n{context_block}\n\n"
-            f"QUESTION:\n{query}\n\n"
+            f"QUESTION:\n{question}\n\n"
             "Answer the question using ONLY the context above. "
             "Cite chunks inline as [chunk N]."
         )

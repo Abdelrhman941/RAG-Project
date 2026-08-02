@@ -1,6 +1,7 @@
 from .chunk import Chunk, ChunkRequest, ChunkResponse
 from .document import DocumentUploadResponse
 from .embedding import EmbeddingResponse
+from .generation import ChatRequest, ChatResponse, CitationSchema
 from .indexing import IndexingResponse
 from .parsed_document import ParsedDocument
 from .point import PointData, PointPayload
@@ -19,4 +20,7 @@ __all__ = [
     "RetrievalRequest",
     "RetrievalResponse",
     "RetrievedChunk",
+    "ChatRequest",
+    "ChatResponse",
+    "CitationSchema",
 ]
