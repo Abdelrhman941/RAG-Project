@@ -19,12 +19,7 @@ from pydantic import UUID4, BaseModel, ConfigDict, Field
 
 
 class ChatRole(str, Enum):
-    """Roles a chat message can carry.
-
-    Kept intentionally minimal for Phase 1 (system + user). `ASSISTANT`
-    is included because `GenerationResult` conceptually represents an
-    assistant reply — even though Phase 1 does not yet call an LLM.
-    """
+    """Roles a chat message can carry."""
 
     SYSTEM = "system"
     USER = "user"
@@ -32,12 +27,7 @@ class ChatRole(str, Enum):
 
 
 class ChatMessage(BaseModel):
-    """A single message in a chat conversation.
-
-    Provider-agnostic on purpose: any LLM SDK adapter (Groq, OpenAI,
-    Anthropic, ...) is responsible for mapping this into whatever
-    shape its client expects, at the adapter boundary.
-    """
+    """Provider-agnostic chat message."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -46,11 +36,10 @@ class ChatMessage(BaseModel):
 
 
 class Citation(BaseModel):
-    """Provenance for a single piece of retrieved evidence used to answer.
+    """Evidence metadata for one retrieved chunk.
 
-    Domain model — NOT the API response shape. The API layer will
-    project this into a public schema when `/chat` ships in a later
-    phase.
+    Mirrors the retrieval payload. Do not invent fields (such as
+    `source`) unless retrieval actually provides them.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -62,11 +51,7 @@ class Citation(BaseModel):
 
 
 class TokenUsage(BaseModel):
-    """LLM token accounting for one generation call.
-
-    Not populated in Phase 1 (no LLM yet) but modelled now so downstream
-    phases can slot it in without touching `GenerationResult`'s shape.
-    """
+    """LLM token accounting."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -76,11 +61,7 @@ class TokenUsage(BaseModel):
 
 
 class GenerationResult(BaseModel):
-    """Internal outcome of a generation call.
-
-    Phase 1 does not produce this yet — it exists so the PromptBuilder
-    and later Generator service share a single, stable contract.
-    """
+    """Internal result produced by the generation pipeline."""
 
     model_config = ConfigDict(frozen=True)
 
