@@ -1,4 +1,7 @@
-.PHONY: backend-sync backend-run backend-test frontend-install frontend-run fix check pre-commit
+.PHONY: backend-sync backend-run backend-test frontend-install frontend-run fix check pre-commit tree
+IGNORE := .git|__pycache__|node_modules|uploads|qdrant
+
+SNAPSHOT_FILE := project_snapshot.md
 
 # ==========================================================
 # Backend
@@ -7,6 +10,7 @@ backend-sync:
 	cd backend && uv lock && uv sync
 
 backend-run:
+	$(MAKE) backend-sync
 	cd backend && docker compose up -d qdrant
 	@echo "Waiting for Qdrant to start..."
 	@sleep 3
@@ -14,6 +18,7 @@ backend-run:
 	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0
 
 backend-test:
+	$(MAKE) backend-sync
 	cd backend && uv run pytest
 
 # ==========================================================
@@ -42,3 +47,15 @@ check:
 
 pre-commit:
 	cd backend && uv run pre-commit run --config ../.pre-commit-config.yaml --all-files
+
+# =========================================================
+# Misc
+# ==========================================================
+tree:
+	rm -rf .ruff_cache backend/__pycache__ backend/.pytest_cache backend/.mypy_cache
+	tree -I '$(IGNORE)' backend frontend
+
+tree-s:
+	rm -rf .ruff_cache backend/__pycache__ backend/.pytest_cache backend/.mypy_cache
+	tree -I '$(IGNORE)' backend frontend > $(SNAPSHOT_FILE)
+	@echo "✅ Tree saved to $(SNAPSHOT_FILE)"
