@@ -3,8 +3,9 @@ from pathlib import Path
 
 
 class BaseParser(ABC):
-    """Interface every document parser must implement."""
+    """Abstract base class for document parsers."""
 
     @abstractmethod
     def parse(self, path: Path) -> list[str]:
-        """Parse the file at `path` and return a list of page texts."""
+        """Parse a document into ordered text segments."""
+        raise NotImplementedError

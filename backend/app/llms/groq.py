@@ -1,15 +1,25 @@
 """
-Groq adapter — the ONLY file in the codebase allowed to import the Groq SDK.
+Groq adapter.
+
+This is the only module allowed to import the Groq SDK.
+
+Responsibilities:
+- Translate ProviderChatMessage -> Groq request format.
+- Call the Groq API.
+- Translate Groq SDK exceptions into project exceptions.
+- Return plain generated text.
 """
 
 from groq import AsyncGroq
 from groq import GroqError as GroqSDKError
 
 from ..core import LLMProviderError
-from .base import BaseLLMProvider, ChatMessage
+from .base import BaseLLMProvider, ProviderChatMessage
 
 
 class GroqProvider(BaseLLMProvider):
+    """LLM provider backed by the Groq API."""
+
     def __init__(
         self,
         api_key: str,
@@ -28,30 +38,29 @@ class GroqProvider(BaseLLMProvider):
 
     async def generate(
         self,
-        messages: list[ChatMessage],
+        messages: list[ProviderChatMessage],
         *,
         temperature: float | None = None,
         max_tokens: int | None = None,
     ) -> str:
+        """Generate a completion using Groq."""
         try:
             response = await self._client.chat.completions.create(
                 model=self._model,
                 messages=messages,  # type: ignore[arg-type]
-                temperature=temperature
-                if temperature is not None
-                else self._temperature,
-                max_tokens=max_tokens if max_tokens is not None else self._max_tokens,
+                temperature=(self._temperature if temperature is None else temperature),
+                max_tokens=(self._max_tokens if max_tokens is None else max_tokens),
             )
         except GroqSDKError as exc:
             raise LLMProviderError(f"Groq request failed: {exc}") from exc
-        except Exception as exc:  # network errors, timeouts, etc.
+        except Exception as exc:
             raise LLMProviderError(f"Unexpected Groq client error: {exc}") from exc
 
         if not response.choices:
-            raise LLMProviderError("Groq returned no choices")
+            raise LLMProviderError("Groq returned no choices.")
 
         content = response.choices[0].message.content
         if not content:
-            raise LLMProviderError("Groq returned an empty message")
+            raise LLMProviderError("Groq returned an empty response.")
 
         return content

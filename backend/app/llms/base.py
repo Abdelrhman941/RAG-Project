@@ -1,15 +1,15 @@
 """
-Abstract LLM provider interface.
+Abstract contract implemented by every LLM provider adapter.
 
-Rule: the rest of the app (services, use-cases) depends ONLY on this
-interface. No Groq SDK type ever leaks outside `llms/groq.py`.
+The application layer depends only on this interface.
+Concrete providers (Groq, OpenAI, etc.) implement it.
 """
 
 from abc import ABC, abstractmethod
 from typing import Literal, TypedDict
 
 
-class ChatMessage(TypedDict):
+class ProviderChatMessage(TypedDict):
     """Provider-agnostic chat message shape."""
 
     role: Literal["system", "user", "assistant"]
@@ -22,7 +22,7 @@ class BaseLLMProvider(ABC):
     @abstractmethod
     async def generate(
         self,
-        messages: list[ChatMessage],
+        messages: list[ProviderChatMessage],
         *,
         temperature: float | None = None,
         max_tokens: int | None = None,

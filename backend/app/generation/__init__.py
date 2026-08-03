@@ -1,15 +1,20 @@
-from .models import ChatMessage, ChatRole, Citation, GenerationResult, TokenUsage
-from .ports import PromptBuilderPort, RetrievalServicePort, RetrievedChunk
+from .models import (
+    ChatMessage,
+    ChatRole,
+    Citation,
+    GenerationResult,
+    TokenUsage,
+)
+from .ports import PromptBuilderPort, RetrievalServicePort
 from .prompt_builder import PromptBuilder
 
 __all__ = [
-    "ChatMessage",
     "ChatRole",
+    "ChatMessage",
     "Citation",
-    "GenerationResult",
-    "PromptBuilder",
     "TokenUsage",
-    "PromptBuilderPort",
+    "GenerationResult",
     "RetrievalServicePort",
-    "RetrievedChunk",
+    "PromptBuilderPort",
+    "PromptBuilder",
 ]

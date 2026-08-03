@@ -7,19 +7,17 @@ from ..schemas import PointData
 
 
 class BaseVectorStore(ABC):
-    """Interface every vector store implementation must satisfy.
+    """Contract for all vector store implementations.
 
-    Sprint 7 introduced write-side operations (create / upsert / delete).
-    Sprint 8 (Retrieval) extends this contract with `search`, the ONLY
-    read-side operation. Adapters MUST NOT leak vendor-specific types
-    across this boundary: `search` returns provider-agnostic
-    `SearchResult` domain models.
+    Defines write (create/upsert/delete) and read (search) operations.
+    Strictly enforces a provider-agnostic boundary: adapters must never leak
+    vendor-specific types and must return domain models (e.g., `SearchResult`).
     """
 
     # ---- Collection lifecycle ----
     @abstractmethod
     async def collection_exists(self, collection_name: str) -> bool:
-        """Return True iff a collection with the given name exists."""
+        """Check if a specific collection already exists in the database."""
 
     @abstractmethod
     async def create_collection(
@@ -28,7 +26,8 @@ class BaseVectorStore(ABC):
         dimension: int,
         distance: DistanceMetric,
     ) -> None:
-        """Create a collection. Must be a no-op if it already exists."""
+        """Create a new collection with the required vector dimension & distance metric.
+        Ignores the operation if the collection already exists."""
 
     # ---- Points ----
     @abstractmethod
@@ -37,7 +36,8 @@ class BaseVectorStore(ABC):
         collection_name: str,
         points: Sequence[PointData],
     ) -> int:
-        """Insert or update the given points. Returns the number persisted."""
+        """Insert new points or update existing ones in a collection.
+        Returns the total number of successfully saved points."""
 
     @abstractmethod
     async def delete_by_document(
@@ -45,11 +45,8 @@ class BaseVectorStore(ABC):
         collection_name: str,
         document_id: str,
     ) -> None:
-        """Delete every point tagged with the given document_id.
-
-        Used during re-indexing so the same document does not
-        accumulate duplicate chunks across runs.
-        """
+        """Delete all vectors associated with a specific document ID.
+        Crucial for re-indexing files without leaving duplicate old chunks behind."""
 
     # ---- Retrieval ----
     @abstractmethod
@@ -61,21 +58,15 @@ class BaseVectorStore(ABC):
         *,
         min_score: float | None = None,
     ) -> list[SearchResult]:
-        """Return the top-k most similar points for the given query vector.
-
-        Results are ordered by descending similarity as computed by the
-        underlying engine — the caller does NOT re-rank. `min_score` is
-        an optional lower bound: implementations MUST forward it to the
-        engine (or filter server-side) so hits below the threshold are
-        never returned. Adapters MUST map their native hit type into
-        `SearchResult` before returning.
-        """
+        """Find and return the `top_k` most similar vectors to the provided search vector.
+        Optionally filters out results below the `min_score` threshold.
+        Must return provider-agnostic `SearchResult` objects."""  # noqa: E501
 
     # ---- Health ----
     @abstractmethod
     async def health_check(self) -> bool:
-        """Return True iff the backing store is reachable."""
+        """Verify that the database connection is alive and responding."""
 
     async def close(self) -> None:  # pragma: no cover - default no-op
-        """Release any underlying client resources. Optional to override."""
+        """Safely close the database connection and release resources."""
         return None

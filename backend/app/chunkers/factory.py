@@ -1,10 +1,9 @@
-from ..core.enums.chunking import ChunkingStrategy
-from ..core.exceptions import UnsupportedChunkingStrategyError
+from ..core import ChunkingStrategy, UnsupportedChunkingStrategyError
 from .base import BaseChunker
-from .character import CharacterChunker
+from .token import RecursiveChunker
 
 _CHUNKERS: dict[ChunkingStrategy, BaseChunker] = {
-    ChunkingStrategy.CHARACTER: CharacterChunker(),
+    ChunkingStrategy.TOKEN: RecursiveChunker(),
 }
 
 
@@ -12,4 +11,4 @@ def get_chunker(strategy: ChunkingStrategy) -> BaseChunker:
     try:
         return _CHUNKERS[strategy]
     except KeyError:
-        raise UnsupportedChunkingStrategyError(strategy.value) from None
+        raise UnsupportedChunkingStrategyError(strategy) from None

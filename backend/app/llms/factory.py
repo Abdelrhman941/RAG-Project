@@ -1,38 +1,36 @@
 """
-Factory for LLM providers.
+Factory for creating LLM providers.
 
-Two layers on purpose:
-- `create_llm_provider(settings)` -> pure function, easy to unit test,
-    no caching, no FastAPI coupling.
-- `get_llm_provider()` -> FastAPI dependency, cached with lru_cache so
-    we don't build a new Groq client (and TCP connection pool) on every request.
-    This is the fix for the "new provider instance per request" bug pattern.
+Design:
+- create_llm_provider(settings): pure factory function.
+- get_llm_provider(): cached singleton used by the application.
 """
 
 from functools import lru_cache
 
-from ..core import Settings, UnknownProviderError, get_settings
+from ..core import (
+    LLMProviderName,
+    Settings,
+    UnknownProviderError,
+    get_settings,
+)
 from .base import BaseLLMProvider
 from .groq import GroqProvider
 
-settings = get_settings()
 
-
-def create_llm_provider(cfg: Settings) -> BaseLLMProvider:
-    provider = cfg.LLM_PROVIDER.lower()
-
-    if provider == "groq":
+def create_llm_provider(settings: Settings) -> BaseLLMProvider:
+    """Create an LLM provider from application settings."""
+    if settings.LLM_PROVIDER is LLMProviderName.GROQ:
         return GroqProvider(
-            api_key=cfg.GROQ_API_KEY,
-            model=cfg.GROQ_MODEL,
-            temperature=cfg.LLM_TEMPERATURE,
-            max_tokens=cfg.LLM_MAX_TOKENS,
+            api_key=settings.GROQ_API_KEY,
+            model=settings.GROQ_MODEL,
+            temperature=settings.LLM_TEMPERATURE,
+            max_tokens=settings.LLM_MAX_TOKENS,
         )
-
-    raise UnknownProviderError(f"Unknown LLM provider: '{cfg.LLM_PROVIDER}'")
+    raise UnknownProviderError(settings.LLM_PROVIDER)
 
 
 @lru_cache
 def get_llm_provider() -> BaseLLMProvider:
-    """FastAPI dependency — singleton across the app's lifetime."""
-    return create_llm_provider(settings)
+    """Return the application-wide LLM provider singleton."""
+    return create_llm_provider(get_settings())

@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     )
     EMBEDDING_MODEL: str = "intfloat/multilingual-e5-small"
     EMBEDDING_DEVICE: str = "cpu"
+    EMBEDDING_BATCH_SIZE: int = Field(
+        default=32,
+        gt=0,
+    )
+    EMBEDDING_NORMALIZE: bool = True
 
     # ------------ Vector Store ------------
     VECTOR_STORE_PROVIDER: VectorStoreProvider = VectorStoreProvider.QDRANT

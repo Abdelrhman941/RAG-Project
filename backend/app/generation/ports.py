@@ -1,37 +1,31 @@
 """
-Structural contracts (Protocols) the GenerationService depends on.
+Protocols that define the contracts required by the generation layer.
 
-Fields here mirror the ACTUAL retrieval chunk output from Sprint 7/8
-(document_id, chunk_id, chunk_index, page_number, score, content).
-No `id` / `text` / `source` placeholders — this matches the real payload.
+The generation service depends only on these abstractions rather than
+concrete retrieval or prompt-building implementations.
 """
 
-from typing import Protocol, Sequence, runtime_checkable
+from typing import Protocol, Sequence
 
-from pydantic import UUID4
-
-from ..llms import ChatMessage
-
-
-@runtime_checkable
-class RetrievedChunk(Protocol):
-    document_id: UUID4
-    chunk_id: UUID4
-    chunk_index: int
-    page_number: int
-    score: float
-    content: str
+from ..retrieval import SearchResult
+from .models import ChatMessage
 
 
 class RetrievalServicePort(Protocol):
-    async def retrieve(self, query: str, top_k: int = 5) -> Sequence[RetrievedChunk]:
-        """Return top_k chunks for the query, best-first. No reordering downstream."""
+    async def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+    ) -> Sequence[SearchResult]:
+        """Retrieve the most relevant chunks for a query."""
         ...
 
 
 class PromptBuilderPort(Protocol):
     def build(
-        self, question: str, chunks: Sequence[RetrievedChunk]
+        self,
+        question: str,
+        chunks: Sequence[SearchResult],
     ) -> list[ChatMessage]:
-        """Build the chat messages to send to the LLM provider."""
+        """Build provider-agnostic chat messages from retrieved chunks."""
         ...

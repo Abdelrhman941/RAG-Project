@@ -4,7 +4,7 @@ from .md import MdParser
 from .pdf import PdfParser
 from .txt import TxtParser
 
-_PARSERS: dict[DocumentExtension, BaseParser] = {
+_PARSER_REGISTRY: dict[DocumentExtension, BaseParser] = {
     DocumentExtension.PDF: PdfParser(),
     DocumentExtension.TXT: TxtParser(),
     DocumentExtension.MD: MdParser(),
@@ -13,6 +13,6 @@ _PARSERS: dict[DocumentExtension, BaseParser] = {
 
 def get_parser(extension: DocumentExtension) -> BaseParser:
     try:
-        return _PARSERS[extension]
+        return _PARSER_REGISTRY[extension]
     except KeyError:
         raise UnsupportedDocumentTypeError(extension.value) from None

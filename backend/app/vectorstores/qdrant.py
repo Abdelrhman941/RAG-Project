@@ -68,12 +68,10 @@ class QdrantVectorStore(BaseVectorStore):
     ) -> None:
         if dimension <= 0:
             raise IndexingError("Embedding dimension must be greater than 0.")
-
         try:
             if await self._client.collection_exists(collection_name):
                 await self._ensure_dimension_matches(collection_name, dimension)
                 return
-
             await self._client.create_collection(
                 collection_name=collection_name,
                 vectors_config=qmodels.VectorParams(
@@ -108,7 +106,6 @@ class QdrantVectorStore(BaseVectorStore):
     ) -> int:
         if not points:
             return 0
-
         structs = [
             qmodels.PointStruct(
                 id=str(point.id),
@@ -117,7 +114,6 @@ class QdrantVectorStore(BaseVectorStore):
             )
             for point in points
         ]
-
         try:
             await self._client.upsert(
                 collection_name=collection_name,
@@ -126,7 +122,6 @@ class QdrantVectorStore(BaseVectorStore):
             )
         except (ResponseHandlingException, UnexpectedResponse) as exc:
             raise IndexingError(f"Failed to upsert points: {exc}") from exc
-
         return len(structs)
 
     async def delete_by_document(
@@ -150,11 +145,18 @@ class QdrantVectorStore(BaseVectorStore):
                 points_selector=selector,
                 wait=True,
             )
-        except (ResponseHandlingException, UnexpectedResponse) as exc:
-            # A missing collection is fine on delete: nothing to remove.
-            logger.warning("Delete-by-document skipped: %s", exc)
+        except UnexpectedResponse as exc:
+            if getattr(exc, "status_code", None) == 404:
+                return
+            raise VectorStoreUnavailableError(
+                f"Failed to delete points for document '{document_id}': {exc}"
+            ) from exc
+        except ResponseHandlingException as exc:
+            raise VectorStoreUnavailableError(
+                f"Qdrant is unreachable while deleting document '{document_id}': {exc}"
+            ) from exc
 
-    # ---- Retrieval (Sprint 8) ----
+    # ---- Retrieval ----
     async def search(
         self,
         collection_name: str,
@@ -171,7 +173,6 @@ class QdrantVectorStore(BaseVectorStore):
         """
         if top_k <= 0:
             return []
-
         try:
             response = await self._client.query_points(
                 collection_name=collection_name,
@@ -188,7 +189,6 @@ class QdrantVectorStore(BaseVectorStore):
             raise RetrievalError(f"Qdrant search failed: {exc}") from exc
         except ResponseHandlingException as exc:
             raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
-
         return [self._to_search_result(point) for point in response.points]
 
     @staticmethod

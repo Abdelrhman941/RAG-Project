@@ -4,13 +4,7 @@ from pydantic import UUID4, BaseModel, ConfigDict, Field
 
 
 class SearchResult(BaseModel):
-    """Domain-level search hit returned by a `BaseVectorStore.search()` call.
-
-    Introduced (Retrieval). The service layer depends on this
-    model, NEVER on Qdrant's `ScoredPoint`. Each vector store adapter is
-    responsible for mapping its native hit type into this shape at the
-    adapter boundary, keeping the service free of any vendor imports.
-    """
+    """Provider-agnostic search result returned by the retrieval layer."""
 
     model_config = ConfigDict(frozen=True)
 
