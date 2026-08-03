@@ -3,8 +3,7 @@ from uuid import UUID
 
 from anyio import to_thread
 
-from ..core.enums.document import DocumentExtension
-from ..core.exceptions import DocumentNotFoundError
+from ..core import DocumentExtension, DocumentNotFoundError
 from ..parsers import get_parser
 
 

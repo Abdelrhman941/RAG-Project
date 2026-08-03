@@ -1,5 +1,4 @@
-from ..core.enums.document import DocumentExtension
-from ..core.exceptions import UnsupportedDocumentTypeError
+from ..core import DocumentExtension, UnsupportedDocumentTypeError
 from .base import BaseParser
 from .md import MdParser
 from .pdf import PdfParser

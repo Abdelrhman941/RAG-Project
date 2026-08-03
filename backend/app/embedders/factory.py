@@ -1,7 +1,6 @@
 from functools import lru_cache
 
-from ..core.enums.embedding import EmbeddingProviderName
-from ..core.exceptions import UnsupportedEmbeddingProviderError
+from ..core import EmbeddingProviderName, UnsupportedEmbeddingProviderError
 from .base import BaseEmbeddingProvider
 from .sentence_transformer import SentenceTransformerProvider
 

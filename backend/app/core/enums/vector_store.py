@@ -2,19 +2,13 @@ from enum import Enum
 
 
 class VectorStoreProvider(str, Enum):
-    # ----- Supported providers -----
+    """Vector store provider names."""
+
     QDRANT = "qdrant"
-    # PGVECTOR = "pgvector"
-    # MILVUS = "milvus"
 
 
 class DistanceMetric(str, Enum):
-    """Distance metric used when creating a vector collection.
-
-    Values match Qdrant's `Distance` enum on purpose so the mapping to
-    the SDK stays a one-liner inside `QdrantVectorStore` — but this enum
-    itself is provider-agnostic and lives in the domain layer.
-    """
+    """Distance metric used when creating a vector collection."""
 
     COSINE = "Cosine"
     DOT = "Dot"

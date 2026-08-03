@@ -3,7 +3,7 @@ from pathlib import Path
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from ..core.exceptions import ParsingError
+from ..core import ParsingError
 from .base import BaseParser
 
 

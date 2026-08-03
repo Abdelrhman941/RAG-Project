@@ -3,7 +3,7 @@ from pathlib import Path
 import aiofiles
 from fastapi import UploadFile
 
-from ..core.exceptions import EmptyFileError, FileTooLargeError
+from ..core import EmptyFileError, FileTooLargeError
 
 CHUNK_SIZE = 1024 * 1024  # 1 MiB
 

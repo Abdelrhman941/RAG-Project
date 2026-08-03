@@ -11,8 +11,7 @@ Two layers on purpose:
 
 from functools import lru_cache
 
-from ..core import Settings, get_settings
-from ..core.exceptions import UnknownProviderError
+from ..core import Settings, UnknownProviderError, get_settings
 from .base import BaseLLMProvider
 from .groq import GroqProvider
 

@@ -3,8 +3,7 @@ from pathlib import Path
 from uuid import UUID
 
 from ..chunkers import get_chunker
-from ..core.enums.chunking import ChunkingStrategy
-from ..core.exceptions import InvalidChunkingParametersError
+from ..core import ChunkingStrategy, InvalidChunkingParametersError
 from ..schemas import Chunk
 from .document_parser import parse_document
 

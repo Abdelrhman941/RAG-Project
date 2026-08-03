@@ -1,5 +1,49 @@
+"""
+Project exception hierarchy.
+
+Exception
+└── DocumentError (Main Root Exception for the project) "Here"
+    │
+    ├── EmptyFileError
+    ├── FileTooLargeError
+    ├── DocumentNotFoundError
+    ├── UnsupportedDocumentTypeError
+    ├── ParsingError
+    │
+    ├── UnsupportedChunkingStrategyError
+    ├── InvalidChunkingParametersError
+    │
+    ├── UnsupportedEmbeddingProviderError
+    ├── EmbeddingError
+    │
+    ├── VectorStoreError (Base Exception for Vector Stores) "Here"
+    │   ├── UnsupportedVectorStoreProviderError
+    │   ├── VectorStoreUnavailableError
+    │   ├── VectorDimensionMismatchError
+    │   ├── IndexingError
+    │   ├── RetrievalError
+    │   └── CollectionNotFoundError
+    │
+    └── LLMError (Base Exception for LLMs)   "Here"
+        ├── LLMConfigError                   "Here"
+        │   └── UnknownProviderError
+        └── LLMProviderError
+"""
+from __future__ import annotations
+
+from uuid import UUID
+
+from .enums import (
+    ChunkingStrategy,
+    EmbeddingProviderName,
+    LLMProviderName,
+    VectorStoreProvider,
+)
+
+
+# -------------- Document ----------------------------
 class DocumentError(Exception):
-    """Base exception for document ingestion errors."""
+    """Base exception for document ingestion pipeline."""
 
 
 class EmptyFileError(DocumentError):
@@ -11,19 +55,19 @@ class FileTooLargeError(DocumentError):
 
     def __init__(self, max_bytes: int):
         self.max_bytes = max_bytes
-        super().__init__(f"File exceeds max size of {max_bytes} bytes.")
+        super().__init__(f"File exceeds maximum size of {max_bytes} bytes.")
 
 
 class DocumentNotFoundError(DocumentError):
-    """Raised when no stored file matches the given document id."""
+    """Raised when a document cannot be found."""
 
-    def __init__(self, document_id: object):
+    def __init__(self, document_id: UUID):
         self.document_id = document_id
         super().__init__(f"Document '{document_id}' was not found.")
 
 
 class UnsupportedDocumentTypeError(DocumentError):
-    """Raised when no parser is registered for a file's extension."""
+    """Raised when no parser supports the given document type."""
 
     def __init__(self, extension: str):
         self.extension = extension
@@ -31,55 +75,54 @@ class UnsupportedDocumentTypeError(DocumentError):
 
 
 class ParsingError(DocumentError):
-    """Raised when a parser fails to extract text from a file."""
+    """Raised when document parsing fails."""
 
 
+# -------------- Chunking ----------------------------
 class UnsupportedChunkingStrategyError(DocumentError):
-    """Raised when no chunker is registered for a chunking strategy."""
+    """Raised when no chunker supports the requested strategy."""
 
-    def __init__(self, strategy: str):
+    def __init__(self, strategy: ChunkingStrategy):
         self.strategy = strategy
-        super().__init__(f"No chunker registered for strategy '{strategy}'.")
+        super().__init__(f"No chunker registered for strategy '{strategy.value}'.")
 
 
 class InvalidChunkingParametersError(DocumentError):
-    """Raised when the resolved chunk_size/overlap combination is invalid."""
-
-    def __init__(self, message: str):
-        super().__init__(message)
+    """Raised when chunking parameters are invalid."""
 
 
+# -------------- Embedding ----------------------------
 class UnsupportedEmbeddingProviderError(DocumentError):
-    """Raised when no embedding provider is registered for the configured name."""
+    """Raised when no embedding provider matches the configured provider."""
 
-    def __init__(self, provider: str):
+    def __init__(self, provider: EmbeddingProviderName):
         self.provider = provider
-        super().__init__(f"No embedding provider registered for '{provider}'.")
+        super().__init__(f"No embedding provider registered for '{provider.value}'.")
 
 
 class EmbeddingError(DocumentError):
-    """Raised when generating embeddings for a document fails."""
+    """Raised when embedding generation fails."""
 
 
-# ---------- Indexing / Vector Store ----------
+# -------------- Vector Store / Indexing ----------------------------
 class VectorStoreError(DocumentError):
     """Base exception for vector store failures."""
 
 
 class UnsupportedVectorStoreProviderError(VectorStoreError):
-    """Raised when no vector store is registered for the configured provider."""
+    """Raised when no vector store provider matches the configured provider."""
 
-    def __init__(self, provider: str):
+    def __init__(self, provider: VectorStoreProvider):
         self.provider = provider
-        super().__init__(f"No vector store registered for '{provider}'.")
+        super().__init__(f"No vector store registered for '{provider.value}'.")
 
 
 class VectorStoreUnavailableError(VectorStoreError):
-    """Raised when the backing vector store is unreachable (network/health)."""
+    """Raised when the configured vector store is unreachable."""
 
 
 class VectorDimensionMismatchError(VectorStoreError):
-    """Raised when the embedding dimension does not match the collection's."""
+    """Raised when embedding dimension differs from collection dimension."""
 
     def __init__(self, expected: int, actual: int):
         self.expected = expected
@@ -91,52 +134,43 @@ class VectorDimensionMismatchError(VectorStoreError):
 
 
 class IndexingError(VectorStoreError):
-    """Raised when persisting points to the vector store fails."""
+    """Raised when indexing vectors fails."""
 
 
-# ---------- Retrieval ----------
+# -------------- Retrieval ----------------------------
 class RetrievalError(VectorStoreError):
-    """Raised when a semantic-search retrieval attempt fails."""
+    """Raised when semantic retrieval fails."""
 
 
 class CollectionNotFoundError(VectorStoreError):
-    """Raised when searching a collection that does not exist yet.
-
-    Distinct from `VectorStoreUnavailableError`: the store is reachable,
-    but the caller asked for a collection that hasn't been created.
-    """
+    """Raised when the requested collection does not exist."""
 
     def __init__(self, collection_name: str):
         self.collection_name = collection_name
         super().__init__(f"Collection '{collection_name}' does not exist.")
 
 
-# ---------- LLM-layer ----------
-"""
-LLM-layer exceptions.
-
-Design: split into a config-time error (bad setup, caught at startup)
-vs a runtime error (bad SDK call, caught per-request by the service layer).
-Keep these additive to your existing exceptions.py — just append.
-"""
-
-
-class LLMError(Exception):
-    """Base class for all LLM-layer errors."""
+# -------------- LLM ----------------------------
+class LLMError(DocumentError):
+    """Base exception for all LLM-related failures."""
 
 
 class LLMConfigError(LLMError):
-    """Raised for invalid/missing configuration (e.g. unknown provider)."""
+    """Raised when LLM configuration is invalid."""
 
 
 class UnknownProviderError(LLMConfigError):
-    """Raised by the factory when LLM_PROVIDER doesn't match any adapter."""
+    """Raised when the configured LLM provider is unsupported."""
+
+    def __init__(self, provider: LLMProviderName | str):
+        self.provider = provider
+
+        provider_name = (
+            provider.value if isinstance(provider, LLMProviderName) else provider
+        )
+
+        super().__init__(f"No LLM provider registered for '{provider_name}'.")
 
 
 class LLMProviderError(LLMError):
-    """
-    Raised when the underlying provider SDK fails or returns something
-    the app can't use (network error, empty completion, rate limit, etc).
-    Provider adapters must catch their SDK's native exceptions and
-    re-raise this instead, so callers never need to know about Groq.
-    """
+    """Raised when an LLM provider request fails."""

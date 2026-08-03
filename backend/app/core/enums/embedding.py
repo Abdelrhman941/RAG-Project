@@ -2,6 +2,6 @@ from enum import Enum
 
 
 class EmbeddingProviderName(str, Enum):
-    # ----- Supported providers -----
+    """Embedding provider names."""
+
     SENTENCE_TRANSFORMER = "sentence_transformer"
-    # OPENAI = "openai"

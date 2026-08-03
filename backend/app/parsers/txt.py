@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ..core.exceptions import ParsingError
+from ..core import ParsingError
 from .base import BaseParser
 
 

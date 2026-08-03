@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
 
-from ..core.enums.chunking import ChunkingStrategy
+from ..core import ChunkingStrategy
 
 
 class Chunk(BaseModel):
