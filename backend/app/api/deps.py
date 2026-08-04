@@ -4,7 +4,12 @@ from typing import Annotated, cast
 from fastapi import Depends
 
 from ..core import Settings, get_settings
-from ..embedders import BaseEmbeddingProvider, get_embedding_provider
+from ..embedders import (
+    BaseEmbeddingProvider,
+    BaseRerankerProvider,
+    get_embedding_provider,
+    get_reranker,
+)
 from ..generation import PromptBuilder, PromptBuilderPort, RetrievalServicePort
 from ..llms import BaseLLMProvider, get_llm_provider
 from ..services import GenerationService, RetrievalServiceAdapter
@@ -12,6 +17,7 @@ from ..vectorstores import BaseVectorStore, get_vector_store
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 EmbeddingProviderDep = Annotated[BaseEmbeddingProvider, Depends(get_embedding_provider)]
+RerankerDep = Annotated[BaseRerankerProvider | None, Depends(get_reranker)]
 VectorStoreDep = Annotated[BaseVectorStore, Depends(get_vector_store)]
 
 
@@ -32,6 +38,7 @@ def get_retrieval_service(
     settings: SettingsDep,
     provider: EmbeddingProviderDep,
     vector_store: VectorStoreDep,
+    reranker: RerankerDep,
 ) -> RetrievalServiceAdapter:
     """Binds retrieval's collaborators once, exposing only
     `retrieve(query, top_k)` to the generation layer — see
@@ -42,6 +49,9 @@ def get_retrieval_service(
         vector_store=vector_store,
         collection_name=settings.QDRANT_COLLECTION,
         min_score=settings.MIN_SCORE,
+        fetch_k=settings.RETRIEVAL_FETCH_K,
+        rerank_min_score=settings.RERANK_MIN_SCORE,
+        reranker=reranker,
     )
 
 

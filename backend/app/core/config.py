@@ -57,7 +57,9 @@ class Settings(BaseSettings):
     EMBEDDING_PROVIDER: EmbeddingProviderName = (
         EmbeddingProviderName.SENTENCE_TRANSFORMER
     )
-    EMBEDDING_MODEL: str = "intfloat/multilingual-e5-small"
+    EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
+    SPARSE_EMBEDDING_MODEL_NAME: str | None = None
+    RERANKER_MODEL_NAME: str | None = None
     EMBEDDING_DEVICE: str = "cpu"
     EMBEDDING_BATCH_SIZE: int = Field(
         default=32,
@@ -79,6 +81,8 @@ class Settings(BaseSettings):
     DEFAULT_TOP_K: int = Field(default=5, gt=0)
     MAX_TOP_K: int = Field(default=20, gt=0)
     MIN_SCORE: float = Field(default=0.1, ge=0.0, le=1.0)
+    RETRIEVAL_FETCH_K: int = Field(default=15, gt=0)
+    RERANK_MIN_SCORE: float = Field(default=0.3, ge=0.0, le=1.0)
 
     # ------------ LLM ------------
     LLM_PROVIDER: LLMProviderName = LLMProviderName.GROQ

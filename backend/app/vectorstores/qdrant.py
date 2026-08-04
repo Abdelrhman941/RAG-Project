@@ -15,6 +15,7 @@ from ..core import (
     VectorStoreUnavailableError,
 )
 from ..retrieval import SearchResult
+from ..schemas import SparseVector
 from .base import BaseVectorStore
 from .models import PointData
 
@@ -72,12 +73,19 @@ class QdrantVectorStore(BaseVectorStore):
             if await self._client.collection_exists(collection_name):
                 await self._ensure_dimension_matches(collection_name, dimension)
                 return
-            await self._client.create_collection(
-                collection_name=collection_name,
-                vectors_config=qmodels.VectorParams(
+            vectors_config = {
+                "": qmodels.VectorParams(
                     size=dimension,
                     distance=_DISTANCE_MAP[distance],
-                ),
+                )
+            }
+            sparse_vectors_config = {
+                "sparse": qmodels.SparseVectorParams(modifier=qmodels.Modifier.IDF)
+            }
+            await self._client.create_collection(
+                collection_name=collection_name,
+                vectors_config=vectors_config,
+                sparse_vectors_config=sparse_vectors_config,
             )
         except (ResponseHandlingException, UnexpectedResponse) as exc:
             raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
@@ -106,14 +114,28 @@ class QdrantVectorStore(BaseVectorStore):
     ) -> int:
         if not points:
             return 0
-        structs = [
-            qmodels.PointStruct(
-                id=str(point.id),
-                vector=point.vector,
-                payload=point.payload.model_dump(mode="json"),
+        from typing import Any
+
+        structs = []
+        for point in points:
+            if point.sparse_vector:
+                vector_data: dict[str, Any] = {
+                    "": point.vector,
+                    "sparse": qmodels.SparseVector(
+                        indices=point.sparse_vector.indices,
+                        values=point.sparse_vector.values,
+                    ),
+                }
+            else:
+                vector_data = point.vector  # type: ignore[assignment]
+
+            structs.append(
+                qmodels.PointStruct(
+                    id=str(point.id),
+                    vector=vector_data,
+                    payload=point.payload.model_dump(mode="json"),
+                )
             )
-            for point in points
-        ]
         try:
             await self._client.upsert(
                 collection_name=collection_name,
@@ -214,24 +236,42 @@ class QdrantVectorStore(BaseVectorStore):
         top_k: int,
         *,
         min_score: float | None = None,
+        sparse_vector: SparseVector | None = None,
     ) -> list[SearchResult]:
-        """Run a top-k semantic-similarity query against Qdrant.
-
-        Uses `query_points` (the modern Qdrant search API) and maps
-        each returned `ScoredPoint` into a domain-level `SearchResult`.
-        Ranking is done entirely by Qdrant; we never re-sort here.
-        """
-        if top_k <= 0:
-            return []
         try:
-            response = await self._client.query_points(
-                collection_name=collection_name,
-                query=list(vector),
-                limit=top_k,
-                score_threshold=min_score,
-                with_payload=True,
-                with_vectors=False,
-            )
+            if sparse_vector:
+                prefetch = [
+                    qmodels.Prefetch(
+                        query=list(vector),
+                        using="",
+                        limit=top_k * 2,
+                    ),
+                    qmodels.Prefetch(
+                        query=qmodels.SparseVector(
+                            indices=sparse_vector.indices,
+                            values=sparse_vector.values,
+                        ),
+                        using="sparse",
+                        limit=top_k * 2,
+                    ),
+                ]
+                response = await self._client.query_points(
+                    collection_name=collection_name,
+                    prefetch=prefetch,
+                    query=qmodels.FusionQuery(fusion=qmodels.Fusion.RRF),
+                    limit=top_k,
+                    with_payload=True,
+                )
+                points = response.points
+            else:
+                response = await self._client.query_points(
+                    collection_name=collection_name,
+                    query=list(vector),
+                    limit=top_k,
+                    score_threshold=min_score,
+                    with_payload=True,
+                )
+                points = response.points
         except UnexpectedResponse as exc:
             # Qdrant returns 404 when the collection is missing.
             if getattr(exc, "status_code", None) == 404:
@@ -239,7 +279,7 @@ class QdrantVectorStore(BaseVectorStore):
             raise RetrievalError(f"Qdrant search failed: {exc}") from exc
         except ResponseHandlingException as exc:
             raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
-        return [self._to_search_result(point) for point in response.points]
+        return [self._to_search_result(point) for point in points]
 
     @staticmethod
     def _to_search_result(point: qmodels.ScoredPoint) -> SearchResult:

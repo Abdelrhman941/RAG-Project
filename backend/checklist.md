@@ -50,10 +50,10 @@
 
 ## P2 — Chunk quality improvements
 
-* [ ] Make chunking operate on normalized text, not file shape alone.
-* [ ] Use one consistent chunking policy for all text-based inputs.
+* [x] Make chunking operate on normalized text, not file shape alone.
+* [x] Use one consistent chunking policy for all text-based inputs.
 * [ ] Tune `chunk_size` and `overlap` using a real corpus, not guesses.
-* [ ] Add a guardrail for maximum chunk size before embedding.
+* [x] Add a guardrail for maximum chunk size before embedding.
 * [x] Separate storage chunk size from LLM prompt chunk size when needed.
 * [x] Add parent or section references for each chunk.
 * [x] Support small-to-big retrieval:
@@ -79,13 +79,13 @@
 
 ## P4 — Retrieval power
 
-* [ ] Add hybrid search: vector search + keyword search.
-* [ ] Merge results with RRF or a similar fusion strategy.
+* [x] Add hybrid search: vector search + keyword search.
+* [x] Merge results with RRF or a similar fusion strategy.
 * [ ] Add query transformation before retrieval.
 * [ ] Add multi-query retrieval when the user question is ambiguous.
-* [ ] Add reranking for retrieved results.
-* [ ] Filter out very weak results before prompt construction.
-* [ ] Reduce duplicate or near-duplicate chunks in `top_k`.
+* [x] Add reranking for retrieved results.
+* [x] Filter out very weak results before prompt construction.
+* [x] Reduce duplicate or near-duplicate chunks in `top_k`.
 * [ ] Add parent document or section retrieval.
 * [ ] Measure false positives caused by micro-chunks.
 

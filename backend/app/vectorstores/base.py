@@ -3,6 +3,7 @@ from collections.abc import Sequence
 
 from ..core import DistanceMetric
 from ..retrieval import SearchResult
+from ..schemas import SparseVector
 from .models import PointData
 
 
@@ -71,8 +72,10 @@ class BaseVectorStore(ABC):
         top_k: int,
         *,
         min_score: float | None = None,
+        sparse_vector: SparseVector | None = None,
     ) -> list[SearchResult]:
         """Find and return the `top_k` most similar vectors to the provided search vector.
+        Optionally accepts a `sparse_vector` for hybrid search (if supported by the adapter).
         Optionally filters out results below the `min_score` threshold.
         Must return provider-agnostic `SearchResult` objects."""  # noqa: E501
 

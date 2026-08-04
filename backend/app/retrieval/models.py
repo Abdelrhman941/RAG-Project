@@ -16,3 +16,4 @@ class SearchResult(BaseModel):
     content: str
     parent_chunk_id: UUID4 | None = None
     parent_content: str | None = None
+    rerank_score: float | None = None

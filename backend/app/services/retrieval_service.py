@@ -12,7 +12,11 @@ import logging
 from anyio import to_thread
 
 from ..core import RetrievalError
-from ..embedders import BaseEmbeddingProvider
+from ..embedders import (
+    BaseEmbeddingProvider,
+    BaseRerankerProvider,
+    BaseSparseEmbeddingProvider,
+)
 from ..retrieval import SearchResult
 from ..vectorstores import BaseVectorStore
 
@@ -49,40 +53,57 @@ def _deduplicate_parents(results: list[SearchResult]) -> list[SearchResult]:
 
 async def retrieve(
     query: str,
-    top_k: int,
     provider: BaseEmbeddingProvider,
     vector_store: BaseVectorStore,
     collection_name: str,
-    *,
+    top_k: int = 5,
+    fetch_k: int = 15,
     min_score: float | None = None,
+    rerank_min_score: float = 0.3,
+    sparse_provider: BaseSparseEmbeddingProvider | None = None,
+    reranker: BaseRerankerProvider | None = None,
 ) -> list[SearchResult]:
-    """Run the retrieval pipeline.
-
-    Steps:
-        1. Embed the query.
-        2. Search the vector store.
-        3. Return provider-agnostic domain results — the caller (API
-           layer) wraps these into the wire response schema.
-    """
-    try:
-        query_vector = await to_thread.run_sync(
-            provider.embed_query,
-            query,
-        )
-    except Exception:
-        logger.exception("Query embedding failed")
-        raise
-
+    """Retrieve the most relevant document chunks for a given query."""
+    query_vector = await to_thread.run_sync(provider.embed_query, query)
     if not query_vector:
         raise RetrievalError("Embedding provider returned an empty query vector.")
 
+    sparse_vector = None
+    if sparse_provider:
+        sparse_vector = await to_thread.run_sync(
+            sparse_provider.embed_sparse_query, query
+        )
+
+    # 1. Fetch broad candidate set (fetch_k)
     raw_hits = await vector_store.search(
         collection_name=collection_name,
         vector=query_vector,
-        top_k=top_k,
-        min_score=min_score,
+        top_k=fetch_k if reranker else top_k,
+        min_score=min_score if not reranker else None,
+        sparse_vector=sparse_vector,
     )
-    return _deduplicate_parents(raw_hits)
+
+    # 2. Parent Dedup
+    deduped = _deduplicate_parents(raw_hits)
+
+    # 3. Rerank if configured
+    if not reranker or not deduped:
+        return deduped[:top_k]
+
+    texts_to_rerank = [hit.content for hit in deduped]
+    rerank_scores = await to_thread.run_sync(reranker.rerank, query, texts_to_rerank)
+
+    # 4. Threshold & Update Scores
+    reranked_results = []
+    for hit, r_score in zip(deduped, rerank_scores, strict=True):
+        if r_score >= rerank_min_score:
+            # We preserve the original Qdrant score and add rerank_score
+            updated_hit = hit.model_copy(update={"rerank_score": r_score})
+            reranked_results.append(updated_hit)
+
+    # 5. Top-K
+    reranked_results.sort(key=lambda x: x.rerank_score or 0.0, reverse=True)
+    return reranked_results[:top_k]
 
 
 class RetrievalServiceAdapter:
@@ -90,33 +111,38 @@ class RetrievalServiceAdapter:
 
     def __init__(
         self,
+        collection_name: str,
         provider: BaseEmbeddingProvider,
         vector_store: BaseVectorStore,
-        collection_name: str,
-        min_score: float | None = None,
+        min_score: float = 0.7,
+        fetch_k: int = 15,
+        rerank_min_score: float = 0.3,
+        sparse_provider: BaseSparseEmbeddingProvider | None = None,
+        reranker: BaseRerankerProvider | None = None,
     ) -> None:
+        self._collection_name = collection_name
         self._provider = provider
         self._vector_store = vector_store
-        self._collection_name = collection_name
         self._min_score = min_score
+        self._fetch_k = fetch_k
+        self._rerank_min_score = rerank_min_score
+        self._sparse_provider = sparse_provider
+        self._reranker = reranker
 
     async def retrieve(
         self,
         query: str,
         top_k: int = 5,
     ) -> list[SearchResult]:
-        query_vector = await to_thread.run_sync(
-            self._provider.embed_query,
-            query,
-        )
-
-        if not query_vector:
-            raise RetrievalError("Embedding provider returned an empty query vector.")
-
-        raw_hits = await self._vector_store.search(
+        return await retrieve(
+            query=query,
             collection_name=self._collection_name,
-            vector=query_vector,
+            provider=self._provider,
+            vector_store=self._vector_store,
             top_k=top_k,
+            fetch_k=self._fetch_k,
             min_score=self._min_score,
+            rerank_min_score=self._rerank_min_score,
+            sparse_provider=self._sparse_provider,
+            reranker=self._reranker,
         )
-        return _deduplicate_parents(raw_hits)

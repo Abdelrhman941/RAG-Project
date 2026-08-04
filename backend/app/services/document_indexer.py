@@ -1,5 +1,5 @@
 from pathlib import Path
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from ..core import (
     ChunkingStrategy,
@@ -7,8 +7,8 @@ from ..core import (
     DocumentStatus,
     IndexingError,
 )
-from ..embedders import BaseEmbeddingProvider
-from ..schemas import Chunk, IndexingResponse
+from ..embedders import BaseEmbeddingProvider, BaseSparseEmbeddingProvider
+from ..schemas import Chunk, IndexingResponse, SparseVector
 from ..vectorstores import BaseVectorStore, PointData, PointPayload
 from .document_chunker import chunk_document
 from .document_embedder import embed_chunks
@@ -17,6 +17,7 @@ from .document_embedder import embed_chunks
 def _build_points(
     chunks: list[Chunk],
     vectors: list[list[float]],
+    sparse_vectors: list[SparseVector] | None = None,
 ) -> list[PointData]:
     """Zip chunks + vectors into provider-agnostic points."""
     if len(chunks) != len(vectors):
@@ -27,8 +28,9 @@ def _build_points(
 
     return [
         PointData(
-            id=uuid4(),
+            id=chunk.chunk_id,
             vector=vector,
+            sparse_vector=sparse_vectors[i] if sparse_vectors else None,
             payload=PointPayload(
                 document_id=chunk.document_id,
                 chunk_id=chunk.chunk_id,
@@ -43,7 +45,7 @@ def _build_points(
                 parent_content=chunk.parent_content,
             ),
         )
-        for chunk, vector in zip(chunks, vectors, strict=True)
+        for i, (chunk, vector) in enumerate(zip(chunks, vectors, strict=True))
     ]
 
 
@@ -57,6 +59,7 @@ async def index_document(
     strategy: ChunkingStrategy,
     embedding_chunk_size: int,
     embedding_overlap: int,
+    sparse_provider: BaseSparseEmbeddingProvider | None = None,
     prompt_chunk_size: int | None = None,
     prompt_overlap: int | None = None,
 ) -> IndexingResponse:
@@ -94,7 +97,14 @@ async def index_document(
 
     if new_chunks:
         vectors = await embed_chunks(new_chunks, provider)
-        points = _build_points(new_chunks, vectors)
+        sparse_vectors = None
+        if sparse_provider:
+            from anyio import to_thread
+
+            sparse_vectors = await to_thread.run_sync(
+                sparse_provider.embed_sparse_documents, [c.content for c in new_chunks]
+            )
+        points = _build_points(new_chunks, vectors, sparse_vectors)
     else:
         vectors = []
         points = []

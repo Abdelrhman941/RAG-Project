@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import UUID4, BaseModel, ConfigDict, Field
 
 from ..core import SourceType
+from ..schemas import SparseVector
 
 
 class PointPayload(BaseModel):
@@ -40,3 +41,4 @@ class PointData(BaseModel):
     id: UUID4
     vector: Annotated[list[float], Field(min_length=1)]
     payload: PointPayload
+    sparse_vector: SparseVector | None = None

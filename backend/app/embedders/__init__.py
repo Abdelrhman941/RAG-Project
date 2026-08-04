@@ -1,9 +1,18 @@
-from .base import BaseEmbeddingProvider
-from .factory import get_embedding_provider
+from .base import (
+    BaseEmbeddingProvider,
+    BaseRerankerProvider,
+    BaseSparseEmbeddingProvider,
+)
+from .cross_encoder import CrossEncoderReranker
+from .factory import get_embedding_provider, get_reranker
 from .sentence_transformer import SentenceTransformerProvider
 
 __all__ = [
     "BaseEmbeddingProvider",
+    "BaseSparseEmbeddingProvider",
+    "BaseRerankerProvider",
+    "CrossEncoderReranker",
     "SentenceTransformerProvider",
     "get_embedding_provider",
+    "get_reranker",
 ]

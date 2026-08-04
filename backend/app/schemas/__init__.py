@@ -5,6 +5,7 @@ from .generation import ChatRequest, ChatResponse, CitationSchema
 from .indexing import IndexingResponse
 from .parsed_document import ParsedDocument
 from .retrieval import RetrievalRequest, RetrievalResponse, RetrievedChunk
+from .sparse import SparseVector
 
 __all__ = [
     "Chunk",
@@ -20,4 +21,5 @@ __all__ = [
     "ChatRequest",
     "ChatResponse",
     "CitationSchema",
+    "SparseVector",
 ]
