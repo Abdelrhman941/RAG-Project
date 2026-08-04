@@ -20,9 +20,7 @@ class CrossEncoderReranker(BaseRerankerProvider):
             ) from exc
 
         self._model_name = model_name
-        self._model = CrossEncoder(
-            model_name, default_activation_function=torch.nn.Sigmoid()
-        )
+        self._model = CrossEncoder(model_name)
 
     @property
     def model_name(self) -> str:
@@ -34,8 +32,10 @@ class CrossEncoderReranker(BaseRerankerProvider):
 
         pairs = [(query, text) for text in texts]
 
-        # Batch predict gives us the bounded scores directly
-        # because we set default_activation_function=torch.nn.Sigmoid()
         raw_scores = self._model.predict(pairs)
 
-        return cast(list[float], raw_scores.tolist())
+        import torch
+
+        scores = torch.sigmoid(torch.tensor(raw_scores)).tolist()
+
+        return cast(list[float], scores)

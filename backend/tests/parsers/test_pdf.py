@@ -37,7 +37,7 @@ def dummy_pdf_path(tmp_path: Path) -> Path:
 
 def test_pdf_parser_no_ocr_no_tables(dummy_pdf_path: Path) -> None:
     parser = PdfParser()
-    pages = parser.parse(dummy_pdf_path)
+    pages = list(parser.parse(dummy_pdf_path))
     assert len(pages) == 2
     assert "Dense text" in pages[0]
     assert "Short" in pages[1]
@@ -47,7 +47,7 @@ def test_pdf_parser_with_tables(dummy_pdf_path: Path) -> None:
     table_ext = MockTableExtractor()
     parser = PdfParser(table_extractor=table_ext)
 
-    pages = parser.parse(dummy_pdf_path)
+    pages = list(parser.parse(dummy_pdf_path))
 
     assert "| Col1 | Col2 |" in pages[0]
     assert "| Col1 | Col2 |" in pages[1]
@@ -59,7 +59,7 @@ def test_pdf_parser_with_ocr_threshold(dummy_pdf_path: Path, mocker: Mock) -> No
     spy = mocker.spy(ocr_engine, "extract_text")
 
     parser = PdfParser(ocr_engine=ocr_engine, ocr_threshold=50)
-    pages = parser.parse(dummy_pdf_path)
+    pages = list(parser.parse(dummy_pdf_path))
 
     # Page 1 has dense text (>50 chars), should NOT trigger OCR
     # Page 2 has "Short" (<50 chars), SHOULD trigger OCR

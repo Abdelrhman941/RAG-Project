@@ -20,7 +20,9 @@ from ..vectorstores import BaseVectorStore, get_vector_store
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 EmbeddingProviderDep = Annotated[BaseEmbeddingProvider, Depends(get_embedding_provider)]
 RerankerDep = Annotated[BaseRerankerProvider | None, Depends(get_reranker)]
-SparseProviderDep = Annotated[BaseSparseEmbeddingProvider | None, Depends(get_sparse_provider)]
+SparseProviderDep = Annotated[
+    BaseSparseEmbeddingProvider | None, Depends(get_sparse_provider)
+]
 VectorStoreDep = Annotated[BaseVectorStore, Depends(get_vector_store)]
 
 

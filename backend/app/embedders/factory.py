@@ -50,6 +50,7 @@ def get_reranker() -> BaseRerankerProvider | None:
     """Return the application-wide reranker singleton."""
     return create_reranker(get_settings())
 
+
 def create_sparse_provider(
     settings: Settings,
 ) -> BaseSparseEmbeddingProvider | None:
@@ -57,6 +58,7 @@ def create_sparse_provider(
     if settings.SPARSE_EMBEDDING_MODEL_NAME:
         return FastEmbedSparseProvider(model_name=settings.SPARSE_EMBEDDING_MODEL_NAME)
     return None
+
 
 @lru_cache
 def get_sparse_provider() -> BaseSparseEmbeddingProvider | None:

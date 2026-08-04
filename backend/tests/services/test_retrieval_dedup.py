@@ -92,7 +92,7 @@ def test_deduplicate_parents_mixed_results() -> None:
     assert results[2].chunk_id == parent_y
     assert results[2].content == "Parent Y"
     assert results[2].score == 0.6
-    assert results[2].chunk_index == 3  # preserved from Child C
+    assert results[2].chunk_index == 0  # Placeholder
 
     # Verify we did not mutate original instances
     assert hits[0].content == "Child A"

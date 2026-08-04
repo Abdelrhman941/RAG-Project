@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
@@ -14,18 +15,26 @@ async def test_chunk_document_propagates_source_type() -> None:
     with patch(
         "app.services.document_chunker.parse_document", new_callable=AsyncMock
     ) as mock_parse:
-        mock_parse.return_value = (["This is page one."], SourceType.TXT)
+
+        async def mock_parse_gen() -> AsyncIterator[str]:
+            for page in ["This is page one."]:
+                yield page
+
+        mock_parse.return_value = (mock_parse_gen(), SourceType.TXT)
 
         # We also need to patch ChunkingConfig to ensure the
         # source_type we pass is predictable or we can just
         # let it use the current hardcoded SourceType.TXT from Step 4 fix
-        chunks = await chunk_document(
-            document_id=doc_id,
-            upload_dir=Path("/tmp"),
-            strategy=ChunkingStrategy.TOKEN,
-            embedding_chunk_size=10,
-            embedding_overlap=0,
-        )
+        chunks = [
+            c
+            async for c in chunk_document(
+                document_id=doc_id,
+                upload_dir=Path("/tmp"),
+                strategy=ChunkingStrategy.TOKEN,
+                embedding_chunk_size=10,
+                embedding_overlap=0,
+            )
+        ]
 
         assert len(chunks) > 0
         for chunk in chunks:
@@ -50,15 +59,23 @@ async def test_chunk_document_dedup_and_contiguous_index() -> None:
     with patch(
         "app.services.document_chunker.parse_document", new_callable=AsyncMock
     ) as mock_parse:
-        mock_parse.return_value = (pages, SourceType.TXT)
 
-        chunks = await chunk_document(
-            document_id=doc_id,
-            upload_dir=Path("/tmp"),
-            strategy=ChunkingStrategy.TOKEN,
-            embedding_chunk_size=200,
-            embedding_overlap=0,
-        )
+        async def mock_parse_gen() -> AsyncIterator[str]:
+            for page in pages:
+                yield page
+
+        mock_parse.return_value = (mock_parse_gen(), SourceType.TXT)
+
+        chunks = [
+            c
+            async for c in chunk_document(
+                document_id=doc_id,
+                upload_dir=Path("/tmp"),
+                strategy=ChunkingStrategy.TOKEN,
+                embedding_chunk_size=200,
+                embedding_overlap=0,
+            )
+        ]
 
     # The second identical footer should be dropped.
     assert len(chunks) == 3

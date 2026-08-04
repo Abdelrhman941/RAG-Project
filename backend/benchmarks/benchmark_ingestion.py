@@ -3,6 +3,7 @@ import json
 import logging
 import time
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from app.core.config import get_settings
@@ -24,9 +25,6 @@ CORPUS_DIR = BENCHMARKS_DIR / "corpus"
 RESULTS_DIR = BENCHMARKS_DIR / "results"
 
 
-from typing import Any
-
-
 async def benchmark_document(file_path: Path) -> dict[str, Any]:
     settings = get_settings()
     doc_id = uuid4()
@@ -36,7 +34,8 @@ async def benchmark_document(file_path: Path) -> dict[str, Any]:
     target_path = settings.UPLOAD_DIR / f"{doc_id}{file_path.suffix}"
     target_path.write_bytes(file_path.read_bytes())
 
-    # The document_name parameter isn't currently used heavily by chunker, but parse_document uses upload_dir and document_id
+    # The document_name parameter isn't currently used heavily by chunker,
+    # but parse_document uses upload_dir and document_id
     # We need to simulate the upload by putting the file in the right place
 
     metrics = {
@@ -46,17 +45,18 @@ async def benchmark_document(file_path: Path) -> dict[str, Any]:
 
     # 1. Parse
     start_time = time.perf_counter()
-    text, source_type = await parse_document(
+    pages_gen, source_type = await parse_document(
         document_id=doc_id,
         upload_dir=settings.UPLOAD_DIR,
     )
+    pages = [p async for p in pages_gen]
     parse_time = time.perf_counter() - start_time
     metrics["parse_time_sec"] = parse_time
-    metrics["parsed_length_chars"] = len(text)
+    metrics["parsed_length_chars"] = sum(len(p) for p in pages)
 
     # 2. Chunk
     start_time = time.perf_counter()
-    chunks = await chunk_document(
+    chunks_gen = chunk_document(
         document_id=doc_id,
         upload_dir=settings.UPLOAD_DIR,
         strategy=ChunkingStrategy.TOKEN,
@@ -65,6 +65,7 @@ async def benchmark_document(file_path: Path) -> dict[str, Any]:
         prompt_chunk_size=settings.DEFAULT_PROMPT_CHUNK_SIZE,
         prompt_overlap=settings.DEFAULT_PROMPT_OVERLAP,
     )
+    chunks = [c async for c in chunks_gen]
     chunk_time = time.perf_counter() - start_time
     metrics["chunk_time_sec"] = chunk_time
     metrics["num_chunks"] = len(chunks)

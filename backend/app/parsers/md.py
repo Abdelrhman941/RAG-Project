@@ -1,4 +1,5 @@
 import re
+from collections.abc import Iterator
 from pathlib import Path
 
 from .txt import TxtParser
@@ -9,9 +10,9 @@ _HEADING_RE = re.compile(r"^#{1,6}\s+\S")
 class MdParser(TxtParser):
     """Parse Markdown into heading-preserving sections."""
 
-    def parse(self, path: Path) -> list[str]:
+    def parse(self, path: Path) -> Iterator[str]:
         text = self._read_text(path)
-        return self._split_into_sections(text)
+        yield from self._split_into_sections(text)
 
     @staticmethod
     def _split_into_sections(text: str) -> list[str]:

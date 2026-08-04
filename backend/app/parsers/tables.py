@@ -21,7 +21,7 @@ class PdfPlumberTableExtractor(BaseTableExtractor):
                 page = pdf.pages[page_number - 1]
                 if page is None:
                     return ""
-                    
+
                 tables = page.extract_tables()
 
                 if not tables:

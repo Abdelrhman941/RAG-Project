@@ -42,7 +42,7 @@ async def chunk_uploaded_document(
         else settings.DEFAULT_PROMPT_OVERLAP
     )
 
-    chunks = await chunk_document(
+    chunks_gen = chunk_document(
         document_id=document_id,
         upload_dir=settings.UPLOAD_DIR,
         strategy=chunk_request.strategy,
@@ -51,6 +51,7 @@ async def chunk_uploaded_document(
         prompt_chunk_size=prompt_chunk_size,
         prompt_overlap=prompt_overlap,
     )
+    chunks = [c async for c in chunks_gen]
 
     return ChunkResponse(
         document_id=document_id,

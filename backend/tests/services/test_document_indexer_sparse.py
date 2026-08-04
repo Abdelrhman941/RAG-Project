@@ -1,6 +1,7 @@
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -46,10 +47,7 @@ class MockSparseProvider(BaseSparseEmbeddingProvider):
 
 
 @pytest.mark.asyncio
-@patch("app.services.document_indexer.chunk_document")
-async def test_index_document_with_sparse(
-    mock_chunk: MagicMock
-) -> None:
+async def test_index_document_with_sparse() -> None:
     doc_id = uuid4()
     chunks = [
         Chunk(
@@ -65,25 +63,32 @@ async def test_index_document_with_sparse(
             content_hash="hash",
         )
     ]
-    mock_chunk.return_value = chunks
+
+    async def mock_chunk_document(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
+        for c in chunks:
+            yield c
 
     dense_provider = MockDenseProvider()
     sparse_provider = MockSparseProvider()
     vector_store = AsyncMock(spec=BaseVectorStore)
     vector_store.get_existing_hashes.return_value = frozenset()
 
-    await index_document(
-        document_id=doc_id,
-        upload_dir=Path("/tmp"),
-        collection_name="col",
-        distance=DistanceMetric.COSINE,
-        provider=dense_provider,
-        vector_store=vector_store,
-        strategy=ChunkingStrategy.TOKEN,
-        embedding_chunk_size=100,
-        embedding_overlap=10,
-        sparse_provider=sparse_provider,
-    )
+    with patch(
+        "app.services.document_indexer.chunk_document",
+        new=mock_chunk_document,
+    ):
+        await index_document(
+            document_id=doc_id,
+            upload_dir=Path("/tmp"),
+            collection_name="col",
+            distance=DistanceMetric.COSINE,
+            provider=dense_provider,
+            vector_store=vector_store,
+            strategy=ChunkingStrategy.TOKEN,
+            embedding_chunk_size=100,
+            embedding_overlap=10,
+            sparse_provider=sparse_provider,
+        )
 
     vector_store.upsert.assert_called_once()
     upserted = vector_store.upsert.call_args.kwargs["points"]

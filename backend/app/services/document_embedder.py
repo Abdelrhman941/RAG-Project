@@ -50,7 +50,7 @@ async def embed_document(
             f"maximum context length ({provider.max_sequence_length})."
         )
 
-    chunks = await chunk_document(
+    chunks_gen = chunk_document(
         document_id=document_id,
         upload_dir=upload_dir,
         strategy=strategy,
@@ -59,6 +59,7 @@ async def embed_document(
         prompt_chunk_size=prompt_chunk_size,
         prompt_overlap=prompt_overlap,
     )
+    chunks = [c async for c in chunks_gen]
 
     await embed_chunks(chunks, provider)
     return EmbeddingResponse(

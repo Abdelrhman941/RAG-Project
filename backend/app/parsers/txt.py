@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from pathlib import Path
 
 from charset_normalizer import from_path
@@ -28,5 +29,5 @@ class TxtParser(BaseParser):
 
         return text.replace("\r\n", "\n").replace("\r", "\n")
 
-    def parse(self, path: Path) -> list[str]:
-        return [self._read_text(path)]
+    def parse(self, path: Path) -> Iterator[str]:
+        yield self._read_text(path)

@@ -1,4 +1,5 @@
 import hashlib
+from collections.abc import AsyncIterator
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -17,7 +18,7 @@ async def chunk_document(
     embedding_overlap: int,
     prompt_chunk_size: int | None = None,
     prompt_overlap: int | None = None,
-) -> list[Chunk]:
+) -> AsyncIterator[Chunk]:
     """Parse a document then split it into ordered, deduplicated chunks.
 
     Deduplication is intra-document only (string similarity via difflib).
@@ -43,11 +44,13 @@ async def chunk_document(
         source_type=source_type,
     )
     chunker = get_chunker(config.strategy)
-    chunks: list[Chunk] = []
+    history: list[Chunk] = []
     current_chunk_index = 0
+    page_number = 1
 
-    for page_number, page_text in enumerate(pages, start=1):
+    async for page_text in pages:
         if not page_text.strip():
+            page_number += 1
             continue
 
         for span in chunker.chunk(page_text, config):
@@ -68,10 +71,11 @@ async def chunk_document(
                 parent_content=span.parent_content,
             )
 
-            if is_duplicate(candidate, chunks, settings.DEDUP_SIMILARITY_THRESHOLD):
+            if is_duplicate(candidate, history, settings.DEDUP_SIMILARITY_THRESHOLD):
                 continue  # drop intra-document duplicate
 
-            chunks.append(candidate)
+            history.append(candidate)
+            yield candidate
             current_chunk_index += 1
 
-    return chunks
+        page_number += 1

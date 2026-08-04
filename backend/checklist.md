@@ -66,8 +66,8 @@
 
 ## P3 — Parser upgrades
 
-* [ ] Add table support to `PdfParser`.
-* [ ] Add OCR support for text inside images.
+* [x] Add table support to `PdfParser`.
+* [x] Add OCR support for text inside images.
 * [ ] Add layout detection support.
 * [ ] Add figure extraction support.
 * [ ] Add citation mapping support.
@@ -93,28 +93,28 @@
 
 ## P5 — Performance and cost
 
-* [ ] Batch embeddings instead of embedding one chunk at a time when possible.
-* [ ] Reduce unnecessary round trips to the vector store.
-* [ ] Cache embeddings only if the cache design is explicit and safe.
-* [ ] Cache retrieval results only if the query pattern justifies it.
-* [ ] Use async execution where it materially improves throughput.
-* [ ] Avoid recreating splitters or helpers inside tight loops.
-* [ ] Benchmark every major change before and after.
-* [ ] Keep a stable benchmark corpus for regression testing.
+* [x] Batch embeddings instead of embedding one chunk at a time when possible.
+* [x] Reduce unnecessary round trips to the vector store.
+* [x] Cache embeddings only if the cache design is explicit and safe.
+* [x] Cache retrieval results only if the query pattern justifies it.
+* [x] Use async execution where it materially improves throughput.
+* [x] Avoid recreating splitters or helpers inside tight loops.
+* [x] Benchmark every major change before and after.
+* [x] Keep a stable benchmark corpus for regression testing.
 
 ---
 
 ## P6 — Reliability and quality gates
 
-* [ ] Create golden samples for PDF, Markdown, and TXT ingestion.
-* [ ] Add checks for chunk count, average chunk size, and duplicate ratio.
-* [ ] Add checks for empty chunks or tiny chunks.
-* [ ] Add checks for text loss during parsing.
-* [ ] Add checks that the embedder input stays within limits.
-* [ ] Add checks for citation mapping correctness.
-* [ ] Verify grounded answers in `/chat`.
-* [ ] Reduce hallucination risk through retrieval constraints and prompt rules.
-* [ ] Add regression tests for every fixed bug.
+* [x] Create golden samples for PDF, Markdown, and TXT ingestion.
+* [x] Add checks for chunk count, average chunk size, and duplicate ratio.
+* [x] Add checks for empty chunks or tiny chunks.
+* [x] Add checks for text loss during parsing.
+* [x] Add checks that the embedder input stays within limits.
+* [x] Add checks for citation mapping correctness.
+* [x] Verify grounded answers in `/chat`.
+* [x] Reduce hallucination risk through retrieval constraints and prompt rules.
+* [x] Add regression tests for every fixed bug.
 
 ---
 

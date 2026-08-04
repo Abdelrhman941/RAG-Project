@@ -21,12 +21,12 @@ def _cfg(
 
 def test_empty_text_returns_no_spans() -> None:
     chunker = RecursiveChunker()
-    assert chunker.chunk("", _cfg()) == []
+    assert list(chunker.chunk("", _cfg())) == []
 
 
 def test_whitespace_only_returns_no_spans() -> None:
     chunker = RecursiveChunker()
-    assert chunker.chunk("   \n\t  ", _cfg()) == []
+    assert list(chunker.chunk("   \n\t  ", _cfg())) == []
 
 
 def test_normal_text_returns_spans_with_correct_source_type() -> None:
@@ -52,7 +52,7 @@ def test_hierarchical_chunking_creates_parent_references() -> None:
         min_chunk_chars=10,
         source_type=SourceType.TXT,
     )
-    spans = chunker.chunk(text, cfg)
+    spans = list(chunker.chunk(text, cfg))
 
     assert len(spans) > 0
     # Check that all spans have parent fields populated
@@ -85,8 +85,11 @@ def test_tiny_chunk_is_merged_into_neighbor() -> None:
 def test_sole_tiny_chunk_is_preserved() -> None:
     chunker = RecursiveChunker()
     text = "tiny abstract."
-    spans = chunker.chunk(
-        text, _cfg(embedding_chunk_size=200, embedding_overlap=0, min_chunk_chars=50)
+    spans = list(
+        chunker.chunk(
+            text,
+            _cfg(embedding_chunk_size=200, embedding_overlap=0, min_chunk_chars=50),
+        )
     )
     assert len(spans) == 1
     assert spans[0].content == "tiny abstract."

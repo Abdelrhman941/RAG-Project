@@ -19,10 +19,12 @@ async def test_parse_document_returns_text_and_source_type() -> None:
         mock_find.return_value = mock_path
 
         mock_parser_instance = MagicMock()
-        mock_parser_instance.parse.return_value = ["Page 1 text"]
+        mock_parser_instance.parse.return_value = iter(["Page 1 text"])
         mock_get_parser.return_value = mock_parser_instance
 
-        pages, source_type = await parse_document(doc_id, Path("/tmp"))
-
+        pages_gen, source_type = await parse_document(
+            document_id=doc_id, upload_dir=Path("/tmp")
+        )
+        pages = [p async for p in pages_gen]
         assert pages == ["Page 1 text"]
         assert source_type == SourceType.PDF

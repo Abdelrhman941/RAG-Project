@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # ------------ Storage ------------
     MAX_FILE_SIZE_MB: int = Field(default=50, gt=0)
     UPLOAD_DIR: Path = _PROJECT_ROOT / "data" / "uploads"
+    INGESTION_BATCH_SIZE: int = Field(default=100, gt=0)
 
     # ------------ Chunking ------------
     DEFAULT_EMBEDDING_CHUNK_SIZE: int = Field(default=256, gt=0)

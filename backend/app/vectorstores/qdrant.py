@@ -5,6 +5,7 @@ from uuid import UUID
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models as qmodels
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
 from ..core import (
     CollectionNotFoundError,
@@ -54,13 +55,24 @@ class QdrantVectorStore(BaseVectorStore):
             api_key=api_key,
         )
 
-    # ---- Collection lifecycle ----
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def collection_exists(self, collection_name: str) -> bool:
         try:
             return await self._client.collection_exists(collection_name)
         except (ResponseHandlingException, UnexpectedResponse) as exc:
             raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def create_collection(
         self,
         collection_name: str,
@@ -113,6 +125,12 @@ class QdrantVectorStore(BaseVectorStore):
             raise VectorDimensionMismatchError(expected=existing, actual=dimension)
 
     # ---- Points ----
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def upsert(
         self,
         collection_name: str,
@@ -235,6 +253,12 @@ class QdrantVectorStore(BaseVectorStore):
         return frozenset(found)
 
     # ---- Retrieval ----
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def search(
         self,
         collection_name: str,

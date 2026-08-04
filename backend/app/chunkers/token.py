@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterator
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -22,10 +23,10 @@ class RecursiveChunker(BaseChunker):
         self,
         text: str,
         config: ChunkingConfig,
-    ) -> list[ChunkSpan]:
+    ) -> Iterator[ChunkSpan]:
         text = normalize_text(text)
         if not text:
-            return []
+            return
 
         import uuid
 
@@ -62,7 +63,7 @@ class RecursiveChunker(BaseChunker):
                             parent_content=p_content,
                         )
                     )
-            return spans
+            yield from spans
 
         else:
             splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
@@ -73,7 +74,7 @@ class RecursiveChunker(BaseChunker):
             raw_tuples = self._compute_offsets(raw_chunks, text)
             merged_tuples = self._merge_small_chunks(raw_tuples, config.min_chunk_chars)
 
-            return [
+            yield from [
                 ChunkSpan(
                     content=t[0],
                     start_char=t[1],

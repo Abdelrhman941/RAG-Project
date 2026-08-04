@@ -49,6 +49,40 @@ def _build_points(
     ]
 
 
+async def _process_batch(
+    batch: list[Chunk],
+    vector_store: BaseVectorStore,
+    collection_name: str,
+    provider: BaseEmbeddingProvider,
+    sparse_provider: BaseSparseEmbeddingProvider | None,
+) -> int:
+    """Process and upsert a batch of chunks."""
+    candidate_hashes = frozenset(c.content_hash for c in batch)
+    existing_hashes = await vector_store.get_existing_hashes(
+        collection_name, candidate_hashes
+    )
+    new_chunks = [c for c in batch if c.content_hash not in existing_hashes]
+
+    if not new_chunks:
+        return 0
+
+    vectors = await embed_chunks(new_chunks, provider)
+    sparse_vectors = None
+    if sparse_provider:
+        from anyio import to_thread
+
+        sparse_vectors = await to_thread.run_sync(
+            sparse_provider.embed_sparse_documents, [c.content for c in new_chunks]
+        )
+    points = _build_points(new_chunks, vectors, sparse_vectors)
+
+    indexed = await vector_store.upsert(
+        collection_name=collection_name,
+        points=points,
+    )
+    return indexed
+
+
 async def index_document(
     document_id: UUID,
     upload_dir: Path,
@@ -75,7 +109,7 @@ async def index_document(
             f"maximum context length ({provider.max_sequence_length})."
         )
 
-    chunks = await chunk_document(
+    chunks_stream = chunk_document(
         document_id=document_id,
         upload_dir=upload_dir,
         strategy=strategy,
@@ -85,31 +119,7 @@ async def index_document(
         prompt_overlap=prompt_overlap,
     )
 
-    if not chunks:
-        raise IndexingError(f"Document '{document_id}' produced no chunks to index.")
-
-    # --- Cross-document exact duplicate prevention (content hash) ---
-    candidate_hashes = frozenset(c.content_hash for c in chunks)
-    existing_hashes = await vector_store.get_existing_hashes(
-        collection_name, candidate_hashes
-    )
-    new_chunks = [c for c in chunks if c.content_hash not in existing_hashes]
-
-    if new_chunks:
-        vectors = await embed_chunks(new_chunks, provider)
-        sparse_vectors = None
-        if sparse_provider:
-            from anyio import to_thread
-
-            sparse_vectors = await to_thread.run_sync(
-                sparse_provider.embed_sparse_documents, [c.content for c in new_chunks]
-            )
-        points = _build_points(new_chunks, vectors, sparse_vectors)
-    else:
-        vectors = []
-        points = []
     dimension = provider.embedding_dimension
-
     await vector_store.create_collection(
         collection_name=collection_name,
         dimension=dimension,
@@ -121,15 +131,39 @@ async def index_document(
         document_id=str(document_id),
     )
 
-    indexed = await vector_store.upsert(
-        collection_name=collection_name,
-        points=points,
-    )
+    from ..core import get_settings
+
+    settings = get_settings()
+
+    total_chunks = 0
+    total_indexed = 0
+    batch: list[Chunk] = []
+
+    async for chunk in chunks_stream:
+        batch.append(chunk)
+        if len(batch) >= settings.INGESTION_BATCH_SIZE:
+            indexed = await _process_batch(
+                batch, vector_store, collection_name, provider, sparse_provider
+            )
+            total_indexed += indexed
+            total_chunks += len(batch)
+            batch = []
+
+    if batch:
+        indexed = await _process_batch(
+            batch, vector_store, collection_name, provider, sparse_provider
+        )
+        total_indexed += indexed
+        total_chunks += len(batch)
+
+    if total_chunks == 0:
+        raise IndexingError(f"Document '{document_id}' produced no chunks to index.")
+
     return IndexingResponse(
         document_id=document_id,
         collection_name=collection_name,
-        total_chunks=len(chunks),
-        indexed_points=indexed,
+        total_chunks=total_chunks,
+        indexed_points=total_indexed,
         embedding_model=provider.model_name,
         dimension=dimension,
         status=DocumentStatus.INDEXED,

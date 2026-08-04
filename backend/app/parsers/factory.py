@@ -10,7 +10,7 @@ _PARSER_REGISTRY: dict[DocumentExtension, BaseParser] = {
     DocumentExtension.PDF: PdfParser(
         ocr_engine=TesseractOCREngine(),
         table_extractor=PdfPlumberTableExtractor(),
-        ocr_threshold=50
+        ocr_threshold=50,
     ),
     DocumentExtension.TXT: TxtParser(),
     DocumentExtension.MD: MdParser(),

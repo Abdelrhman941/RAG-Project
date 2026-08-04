@@ -1,4 +1,6 @@
 import hashlib
+from collections.abc import AsyncIterator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -57,10 +59,14 @@ async def test_index_document_skips_already_indexed_chunks() -> None:
 
     chunks = [_make_chunk(existing_text, 0), _make_chunk(new_text, 1)]
 
+    async def mock_chunk_document(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
+        for c in chunks:
+            yield c
+
     with (
         patch(
             "app.services.document_indexer.chunk_document",
-            new=AsyncMock(return_value=chunks),
+            new=mock_chunk_document,
         ),
         patch(
             "app.services.document_indexer.embed_chunks",
@@ -107,10 +113,14 @@ async def test_index_document_all_chunks_new_embeds_all() -> None:
     mock_provider.model_name = "test-model"
     mock_provider.max_sequence_length = 512
 
+    async def mock_chunk_document(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
+        for c in chunks:
+            yield c
+
     with (
         patch(
             "app.services.document_indexer.chunk_document",
-            new=AsyncMock(return_value=chunks),
+            new=mock_chunk_document,
         ),
         patch(
             "app.services.document_indexer.embed_chunks",

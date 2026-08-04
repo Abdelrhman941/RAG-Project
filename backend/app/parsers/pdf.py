@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from pathlib import Path
 
 from pypdf import PdfReader
@@ -8,7 +9,8 @@ from .base import BaseOCREngine, BaseParser, BaseTableExtractor
 
 
 class PdfParser(BaseParser):
-    """Parse PDF pages into page-level text segments with optional OCR and Table extraction."""
+    """Parse PDF pages into page-level text
+    segments with optional OCR and Table extraction."""
 
     def __init__(
         self,
@@ -20,13 +22,12 @@ class PdfParser(BaseParser):
         self._table_extractor = table_extractor
         self._ocr_threshold = ocr_threshold
 
-    def parse(self, path: Path) -> list[str]:
+    def parse(self, path: Path) -> Iterator[str]:
         try:
             reader = PdfReader(path)
         except (OSError, PdfReadError) as exc:
             raise ParsingError(f"Could not read '{path.name}' as a valid PDF.") from exc
 
-        pages: list[str] = []
         for page_number, page in enumerate(reader.pages, start=1):
             try:
                 text = page.extract_text() or ""
@@ -47,7 +48,6 @@ class PdfParser(BaseParser):
                     # Log error but don't fail the entire parsing
                     pass
 
-            # Optional Table Extraction
             if self._table_extractor:
                 try:
                     tables_md = self._table_extractor.extract_tables(path, page_number)
@@ -56,5 +56,4 @@ class PdfParser(BaseParser):
                 except Exception:
                     pass
 
-            pages.append(text)
-        return pages
+            yield text
