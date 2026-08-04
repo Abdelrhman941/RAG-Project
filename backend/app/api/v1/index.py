@@ -30,6 +30,6 @@ async def index_uploaded_document(
         collection_name=settings.QDRANT_COLLECTION,
         distance=settings.DISTANCE_METRIC,
         strategy=ChunkingStrategy.TOKEN,
-        chunk_size=settings.DEFAULT_CHUNK_SIZE,
-        overlap=settings.DEFAULT_CHUNK_OVERLAP,
+        embedding_chunk_size=settings.DEFAULT_EMBEDDING_CHUNK_SIZE,
+        embedding_overlap=settings.DEFAULT_EMBEDDING_OVERLAP,
     )

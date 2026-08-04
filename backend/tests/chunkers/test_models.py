@@ -22,8 +22,8 @@ def test_chunking_config_min_chunk_chars_must_be_positive() -> None:
     with pytest.raises(InvalidChunkingParametersError):
         ChunkingConfig(
             strategy=ChunkingStrategy.TOKEN,
-            chunk_size=512,
-            overlap=50,
+            embedding_chunk_size=512,
+            embedding_overlap=0,
             min_chunk_chars=0,
             source_type=SourceType.TXT,
         )

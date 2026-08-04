@@ -21,19 +21,23 @@ async def chunk_uploaded_document(
     settings: SettingsDep,
     chunk_request: Annotated[ChunkRequest, Body(default_factory=ChunkRequest)],
 ) -> ChunkResponse:
-    chunk_size = chunk_request.chunk_size or settings.DEFAULT_CHUNK_SIZE
-    overlap = (
-        chunk_request.overlap
-        if chunk_request.overlap is not None
-        else settings.DEFAULT_CHUNK_OVERLAP
+    embedding_chunk_size = (
+        chunk_request.embedding_chunk_size
+        if chunk_request.embedding_chunk_size is not None
+        else settings.DEFAULT_EMBEDDING_CHUNK_SIZE
+    )
+    embedding_overlap = (
+        chunk_request.embedding_overlap
+        if chunk_request.embedding_overlap is not None
+        else settings.DEFAULT_EMBEDDING_OVERLAP
     )
 
     chunks = await chunk_document(
         document_id=document_id,
         upload_dir=settings.UPLOAD_DIR,
         strategy=chunk_request.strategy,
-        chunk_size=chunk_size,
-        overlap=overlap,
+        embedding_chunk_size=embedding_chunk_size,
+        embedding_overlap=embedding_overlap,
     )
 
     return ChunkResponse(
