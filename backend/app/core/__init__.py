@@ -7,6 +7,7 @@ from .enums import (
     EmbeddingProviderName,
     Environment,
     LLMProviderName,
+    SourceType,
     VectorStoreProvider,
 )
 from .exceptions import (
@@ -43,6 +44,7 @@ __all__ = [
     "EmbeddingProviderName",
     "Environment",
     "LLMProviderName",
+    "SourceType",
     "VectorStoreProvider",
     "CollectionNotFoundError",
     "DocumentError",

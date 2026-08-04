@@ -2,6 +2,8 @@ from typing import Annotated
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field
 
+from ..core import SourceType
+
 
 class PointPayload(BaseModel):
     """Metadata stored alongside the vector.
@@ -17,6 +19,9 @@ class PointPayload(BaseModel):
     chunk_index: Annotated[int, Field(ge=0)]
     page_number: Annotated[int, Field(ge=1)]
     content: str
+    source_type: SourceType
+    start_char: Annotated[int, Field(ge=0)]
+    end_char: Annotated[int, Field(ge=0)]
 
 
 class PointData(BaseModel):

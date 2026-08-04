@@ -35,6 +35,9 @@ def _build_points(
                 chunk_index=chunk.chunk_index,
                 page_number=chunk.page_number,
                 content=chunk.content,
+                start_char=chunk.start_char,
+                end_char=chunk.end_char,
+                source_type=chunk.source_type,
             ),
         )
         for chunk, vector in zip(chunks, vectors, strict=True)

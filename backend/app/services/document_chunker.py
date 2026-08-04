@@ -16,10 +16,16 @@ async def chunk_document(
 ) -> list[Chunk]:
     """Parse a document then split it into ordered chunks."""
 
+    from ..core import SourceType, get_settings
+
+    settings = get_settings()
+
     config = ChunkingConfig(
         strategy=strategy,
         chunk_size=chunk_size,
         overlap=overlap,
+        min_chunk_chars=settings.MIN_CHUNK_CHARS,
+        source_type=SourceType.TXT,  # Hardcoded temporarily until Task 6
     )
     pages = await parse_document(
         document_id=document_id,
@@ -44,6 +50,7 @@ async def chunk_document(
                     start_char=span.start_char,
                     end_char=span.end_char,
                     char_count=len(span.content),
+                    source_type=span.source_type,
                 )
             )
             current_chunk_index += 1

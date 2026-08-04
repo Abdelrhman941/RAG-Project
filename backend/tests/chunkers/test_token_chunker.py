@@ -1,0 +1,69 @@
+from app.chunkers.models import ChunkingConfig
+from app.chunkers.token import RecursiveChunker
+from app.core import ChunkingStrategy, SourceType
+
+PDF = SourceType.PDF
+
+
+def _cfg(chunk_size=100, overlap=10, min_chunk_chars=20):
+    return ChunkingConfig(
+        strategy=ChunkingStrategy.TOKEN,
+        chunk_size=chunk_size,
+        overlap=overlap,
+        min_chunk_chars=min_chunk_chars,
+        source_type=PDF,
+    )
+
+
+def test_empty_text_returns_no_spans() -> None:
+    chunker = RecursiveChunker()
+    assert chunker.chunk("", _cfg()) == []
+
+
+def test_whitespace_only_returns_no_spans() -> None:
+    chunker = RecursiveChunker()
+    assert chunker.chunk("   \n\t  ", _cfg()) == []
+
+
+def test_normal_text_returns_spans_with_correct_source_type() -> None:
+    chunker = RecursiveChunker()
+    text = "word " * 200
+    spans = chunker.chunk(text, _cfg(chunk_size=50, overlap=5, min_chunk_chars=10))
+    assert all(s.source_type == PDF for s in spans)
+
+
+def test_tiny_chunk_is_merged_into_neighbor() -> None:
+    chunker = RecursiveChunker()
+    long_part = "word " * 60
+    short_tail = "end"
+    text = long_part + short_tail
+    spans = chunker.chunk(text, _cfg(chunk_size=200, overlap=0, min_chunk_chars=20))
+    contents = [s.content for s in spans]
+    assert not any(c.strip() == "end" for c in contents)
+
+
+def test_sole_tiny_chunk_is_preserved() -> None:
+    chunker = RecursiveChunker()
+    text = "tiny abstract."
+    spans = chunker.chunk(text, _cfg(chunk_size=200, overlap=0, min_chunk_chars=50))
+    assert len(spans) == 1
+    assert spans[0].content == "tiny abstract."
+
+
+def test_span_offsets_are_within_original_text_bounds() -> None:
+    chunker = RecursiveChunker()
+    text = "Hello world. " * 40
+    cfg = _cfg(chunk_size=50, overlap=5, min_chunk_chars=10)
+    spans = chunker.chunk(text, cfg)
+    for span in spans:
+        assert span.start_char >= 0
+        assert span.end_char <= len(text)
+        assert span.start_char < span.end_char
+
+
+def test_crlf_in_input_is_normalized() -> None:
+    chunker = RecursiveChunker()
+    text = "Line one.\r\nLine two.\r\nLine three."
+    spans = chunker.chunk(text, _cfg())
+    combined = " ".join(s.content for s in spans)
+    assert "\r" not in combined

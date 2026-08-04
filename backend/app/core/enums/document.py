@@ -19,3 +19,11 @@ class DocumentStatus(str, Enum):
     INDEXED = "indexed"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class SourceType(str, Enum):
+    """The origin file type of a parsed document."""
+
+    PDF = "pdf"
+    TXT = "txt"
+    MD = "md"

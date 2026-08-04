@@ -1,5 +1,5 @@
 from .chunking import ChunkingStrategy
-from .document import DocumentExtension, DocumentStatus
+from .document import DocumentExtension, DocumentStatus, SourceType
 from .embedding import EmbeddingProviderName
 from .environment import Environment
 from .llm import LLMProviderName
@@ -9,6 +9,7 @@ __all__ = (
     "ChunkingStrategy",
     "DocumentExtension",
     "DocumentStatus",
+    "SourceType",
     "EmbeddingProviderName",
     "Environment",
     "LLMProviderName",

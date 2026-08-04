@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
 
-from ..core import ChunkingStrategy, DocumentStatus
+from ..core import ChunkingStrategy, DocumentStatus, SourceType
 
 
 class Chunk(BaseModel):
@@ -15,6 +15,7 @@ class Chunk(BaseModel):
     start_char: Annotated[int, Field(ge=0)]
     end_char: Annotated[int, Field(ge=0)]
     char_count: Annotated[int, Field(ge=0)]
+    source_type: SourceType
 
     @model_validator(mode="after")
     def validate_span_consistency(self) -> "Chunk":

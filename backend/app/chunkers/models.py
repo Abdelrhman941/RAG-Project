@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..core import ChunkingStrategy, InvalidChunkingParametersError
+from ..core import ChunkingStrategy, InvalidChunkingParametersError, SourceType
 
 
 @dataclass(frozen=True, slots=True)
@@ -10,6 +10,7 @@ class ChunkSpan:
     content: str
     start_char: int
     end_char: int
+    source_type: SourceType
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +20,8 @@ class ChunkingConfig:
     strategy: ChunkingStrategy
     chunk_size: int
     overlap: int
+    min_chunk_chars: int
+    source_type: SourceType
 
     def __post_init__(self) -> None:
         if self.chunk_size <= 0:
@@ -32,4 +35,9 @@ class ChunkingConfig:
         if self.overlap >= self.chunk_size:
             raise InvalidChunkingParametersError(
                 "overlap must be smaller than chunk_size."
+            )
+
+        if self.min_chunk_chars <= 0:
+            raise InvalidChunkingParametersError(
+                "min_chunk_chars must be greater than 0."
             )
