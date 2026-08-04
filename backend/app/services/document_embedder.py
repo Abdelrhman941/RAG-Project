@@ -42,6 +42,12 @@ async def embed_document(
 
     Stateless: nothing is persisted here.
     """
+    if chunk_size > provider.max_sequence_length:
+        raise EmbeddingError(
+            f"Requested chunk_size ({chunk_size}) exceeds model maximum context "
+            f"length ({provider.max_sequence_length})."
+        )
+
     chunks = await chunk_document(
         document_id=document_id,
         upload_dir=upload_dir,

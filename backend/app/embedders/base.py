@@ -17,6 +17,12 @@ class BaseEmbeddingProvider(ABC):
         """Embedding vector dimension."""
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def max_sequence_length(self) -> int:
+        """Maximum number of tokens the model can process."""
+        raise NotImplementedError
+
     @abstractmethod
     def embed_documents(
         self,

@@ -62,6 +62,12 @@ async def index_document(
     FastAPI. Vendor concerns stay inside `vector_store`; transport
     concerns stay inside the API layer.
     """
+    if chunk_size > provider.max_sequence_length:
+        raise IndexingError(
+            f"Requested chunk_size ({chunk_size}) exceeds model maximum context "
+            f"length ({provider.max_sequence_length})."
+        )
+
     chunks = await chunk_document(
         document_id=document_id,
         upload_dir=upload_dir,

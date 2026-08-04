@@ -53,6 +53,7 @@ async def test_index_document_skips_already_indexed_chunks() -> None:
     mock_provider = MagicMock()
     mock_provider.embedding_dimension = 3
     mock_provider.model_name = "test-model"
+    mock_provider.max_sequence_length = 512
 
     chunks = [_make_chunk(existing_text, 0), _make_chunk(new_text, 1)]
 
@@ -104,6 +105,7 @@ async def test_index_document_all_chunks_new_embeds_all() -> None:
     mock_provider = MagicMock()
     mock_provider.embedding_dimension = 3
     mock_provider.model_name = "test-model"
+    mock_provider.max_sequence_length = 512
 
     with (
         patch(
@@ -129,3 +131,24 @@ async def test_index_document_all_chunks_new_embeds_all() -> None:
 
     assert len(mock_embed.call_args[0][0]) == 2
     assert response.total_chunks == 2
+
+
+@pytest.mark.asyncio
+async def test_index_document_rejects_oversized_chunk() -> None:
+    from app.core import IndexingError
+
+    mock_provider = MagicMock()
+    mock_provider.max_sequence_length = 512
+
+    with pytest.raises(IndexingError, match="exceeds model maximum context length"):
+        await index_document(
+            document_id=uuid4(),
+            upload_dir=MagicMock(),
+            provider=mock_provider,
+            vector_store=MagicMock(),
+            collection_name="test",
+            distance=DistanceMetric.COSINE,
+            strategy=ChunkingStrategy.TOKEN,
+            chunk_size=1000,
+            overlap=0,
+        )

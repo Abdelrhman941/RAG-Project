@@ -43,6 +43,15 @@ class SentenceTransformerProvider(BaseEmbeddingProvider):
             )
         return int(dimension)
 
+    @property
+    def max_sequence_length(self) -> int:
+        seq_len = self._model.max_seq_length
+        if seq_len is None:
+            raise EmbeddingError(
+                f"Model '{self._model_name}' does not expose max_seq_length."
+            )
+        return int(seq_len)
+
     def embed_documents(
         self,
         texts: Sequence[str],

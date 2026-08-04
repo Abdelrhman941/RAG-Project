@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = _PROJECT_ROOT / "data" / "uploads"
 
     # ------------ Chunking ------------
-    DEFAULT_CHUNK_SIZE: int = Field(default=1000, gt=0)
-    DEFAULT_CHUNK_OVERLAP: int = Field(default=200, ge=0)
+    DEFAULT_CHUNK_SIZE: int = Field(default=500, gt=0)
+    DEFAULT_CHUNK_OVERLAP: int = Field(default=50, ge=0)
     MIN_CHUNK_CHARS: int = Field(default=50, gt=0)
     DEDUP_SIMILARITY_THRESHOLD: float = Field(default=0.97, ge=0.0, le=1.0)
 
