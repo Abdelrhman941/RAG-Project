@@ -6,12 +6,14 @@ PDF = SourceType.PDF
 
 
 def _cfg(
-    chunk_size: int = 100, overlap: int = 10, min_chunk_chars: int = 20
+    embedding_chunk_size: int = 100,
+    embedding_overlap: int = 10,
+    min_chunk_chars: int = 20,
 ) -> ChunkingConfig:
     return ChunkingConfig(
         strategy=ChunkingStrategy.TOKEN,
-        chunk_size=chunk_size,
-        overlap=overlap,
+        embedding_chunk_size=embedding_chunk_size,
+        embedding_overlap=embedding_overlap,
         min_chunk_chars=min_chunk_chars,
         source_type=PDF,
     )
@@ -30,7 +32,9 @@ def test_whitespace_only_returns_no_spans() -> None:
 def test_normal_text_returns_spans_with_correct_source_type() -> None:
     chunker = RecursiveChunker()
     text = "word " * 200
-    spans = chunker.chunk(text, _cfg(chunk_size=50, overlap=5, min_chunk_chars=10))
+    spans = chunker.chunk(
+        text, _cfg(embedding_chunk_size=50, embedding_overlap=5, min_chunk_chars=10)
+    )
     assert all(s.source_type == PDF for s in spans)
 
 
@@ -39,7 +43,9 @@ def test_tiny_chunk_is_merged_into_neighbor() -> None:
     long_part = "word " * 60
     short_tail = "end"
     text = long_part + short_tail
-    spans = chunker.chunk(text, _cfg(chunk_size=200, overlap=0, min_chunk_chars=20))
+    spans = chunker.chunk(
+        text, _cfg(embedding_chunk_size=200, embedding_overlap=0, min_chunk_chars=20)
+    )
     contents = [s.content for s in spans]
     assert not any(c.strip() == "end" for c in contents)
 
@@ -47,7 +53,9 @@ def test_tiny_chunk_is_merged_into_neighbor() -> None:
 def test_sole_tiny_chunk_is_preserved() -> None:
     chunker = RecursiveChunker()
     text = "tiny abstract."
-    spans = chunker.chunk(text, _cfg(chunk_size=200, overlap=0, min_chunk_chars=50))
+    spans = chunker.chunk(
+        text, _cfg(embedding_chunk_size=200, embedding_overlap=0, min_chunk_chars=50)
+    )
     assert len(spans) == 1
     assert spans[0].content == "tiny abstract."
 
@@ -55,7 +63,7 @@ def test_sole_tiny_chunk_is_preserved() -> None:
 def test_span_offsets_are_within_original_text_bounds() -> None:
     chunker = RecursiveChunker()
     text = "Hello world. " * 40
-    cfg = _cfg(chunk_size=50, overlap=5, min_chunk_chars=10)
+    cfg = _cfg(embedding_chunk_size=50, embedding_overlap=5, min_chunk_chars=10)
     spans = chunker.chunk(text, cfg)
     for span in spans:
         assert span.start_char >= 0

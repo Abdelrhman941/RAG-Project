@@ -54,7 +54,9 @@ In `app/embedders/sentence_transformer.py`:
 def max_sequence_length(self) -> int:
     seq_len = self._model.max_seq_length
     if seq_len is None:
-        raise EmbeddingError(f"Model '{self._model_name}' does not expose max_seq_length.")
+        raise EmbeddingError(
+            f"Model '{self._model_name}' does not expose max_seq_length."
+        )
     return int(seq_len)
 ```
 
@@ -107,7 +109,7 @@ Run `uv run pytest tests/services/test_document_indexer.py tests/services/test_d
 In both `index_document` and `embed_document`, before chunking:
 ```python
 if chunk_size > provider.max_sequence_length:
-    raise IndexingError( # or EmbeddingError
+    raise IndexingError(  # or EmbeddingError
         f"Requested chunk_size ({chunk_size}) exceeds model maximum context length ({provider.max_sequence_length})."
     )
 ```

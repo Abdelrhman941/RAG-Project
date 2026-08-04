@@ -52,27 +52,38 @@ from uuid import uuid4
 from app.core import SourceType
 from app.vectorstores.models import PointPayload
 
+
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
+
 
 def test_point_payload_includes_content_hash() -> None:
     text = "Some chunk content."
     payload = PointPayload(
-        document_id=uuid4(), chunk_id=uuid4(),
-        chunk_index=0, page_number=1,
-        content=text, source_type=SourceType.TXT,
-        start_char=0, end_char=len(text),
+        document_id=uuid4(),
+        chunk_id=uuid4(),
+        chunk_index=0,
+        page_number=1,
+        content=text,
+        source_type=SourceType.TXT,
+        start_char=0,
+        end_char=len(text),
         content_hash=_sha256(text),
     )
     assert payload.content_hash == _sha256(text)
 
+
 def test_point_payload_rejects_missing_content_hash() -> None:
     with pytest.raises(ValidationError):
         PointPayload(
-            document_id=uuid4(), chunk_id=uuid4(),
-            chunk_index=0, page_number=1,
-            content="text", source_type=SourceType.TXT,
-            start_char=0, end_char=4,
+            document_id=uuid4(),
+            chunk_id=uuid4(),
+            chunk_index=0,
+            page_number=1,
+            content="text",
+            source_type=SourceType.TXT,
+            start_char=0,
+            end_char=4,
         )
 ```
 
@@ -109,34 +120,34 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.vectorstores.qdrant import QdrantVectorStore
 
+
 @pytest.mark.asyncio
 async def test_get_existing_hashes_returns_matched_hashes() -> None:
     store = QdrantVectorStore.__new__(QdrantVectorStore)
-    
+
     # Fake a scroll response: two points with content_hash in payload
     fake_point_1 = MagicMock()
     fake_point_1.payload = {"content_hash": "aabbcc"}
     fake_point_2 = MagicMock()
     fake_point_2.payload = {"content_hash": "ddeeff"}
-    
+
     store._client = AsyncMock()
     store._client.collection_exists = AsyncMock(return_value=True)
-    store._client.scroll = AsyncMock(
-        return_value=([fake_point_1, fake_point_2], None)
-    )
-    
+    store._client.scroll = AsyncMock(return_value=([fake_point_1, fake_point_2], None))
+
     result = await store.get_existing_hashes(
         collection_name="test",
         hashes=frozenset({"aabbcc", "zzzzzz"}),
     )
     assert result == frozenset({"aabbcc"})
 
+
 @pytest.mark.asyncio
 async def test_get_existing_hashes_empty_when_collection_missing() -> None:
     store = QdrantVectorStore.__new__(QdrantVectorStore)
     store._client = AsyncMock()
     store._client.collection_exists = AsyncMock(return_value=False)
-    
+
     result = await store.get_existing_hashes(
         collection_name="missing",
         hashes=frozenset({"aabbcc"}),
@@ -206,9 +217,7 @@ async def get_existing_hashes(
             limit=len(hashes),
         )
     except (ResponseHandlingException, UnexpectedResponse) as exc:
-        raise VectorStoreUnavailableError(
-            f"Qdrant hash lookup failed: {exc}"
-        ) from exc
+        raise VectorStoreUnavailableError(f"Qdrant hash lookup failed: {exc}") from exc
 
     found: set[str] = set()
     for point in points:
@@ -238,17 +247,25 @@ from app.core import ChunkingStrategy, DistanceMetric, SourceType
 from app.schemas import Chunk
 from app.services.document_indexer import _build_points, index_document
 
+
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
+
 def _make_chunk(text: str) -> Chunk:
     return Chunk(
-        chunk_id=uuid4(), document_id=uuid4(),
-        chunk_index=0, page_number=1,
-        content=text, start_char=0, end_char=len(text),
-        char_count=len(text), source_type=SourceType.TXT,
+        chunk_id=uuid4(),
+        document_id=uuid4(),
+        chunk_index=0,
+        page_number=1,
+        content=text,
+        start_char=0,
+        end_char=len(text),
+        char_count=len(text),
+        source_type=SourceType.TXT,
         content_hash=_sha256(text),
     )
+
 
 def test_build_points_propagates_content_hash() -> None:
     chunk = _make_chunk("Hello world.")
@@ -277,8 +294,16 @@ async def test_index_document_skips_already_indexed_chunks() -> None:
 
     chunks = [_make_chunk(existing_text), _make_chunk(new_text)]
 
-    with patch("app.services.document_indexer.chunk_document", new=AsyncMock(return_value=chunks)), \
-         patch("app.services.document_indexer.embed_chunks", new=AsyncMock(return_value=[[0.1] * 3])) as mock_embed:
+    with (
+        patch(
+            "app.services.document_indexer.chunk_document",
+            new=AsyncMock(return_value=chunks),
+        ),
+        patch(
+            "app.services.document_indexer.embed_chunks",
+            new=AsyncMock(return_value=[[0.1] * 3]),
+        ) as mock_embed,
+    ):
         await index_document(
             document_id=doc_id,
             upload_dir=MagicMock(),
@@ -354,7 +379,7 @@ async def index_document(...) -> IndexingResponse:
 
 **In `_build_points`**, propagate `content_hash`:
 ```python
-payload=PointPayload(
+payload = PointPayload(
     ...,
     content_hash=chunk.content_hash,
 )

@@ -31,17 +31,20 @@ class ChunkRequest(BaseModel):
     """Optional chunking overrides. Omitted fields fall back to server defaults."""
 
     strategy: ChunkingStrategy = ChunkingStrategy.TOKEN
-    chunk_size: int | None = Field(default=None, gt=0)
-    overlap: int | None = Field(default=None, ge=0)
+    embedding_chunk_size: int | None = Field(default=None, gt=0)
+    embedding_overlap: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_overlap_against_chunk_size(self) -> "ChunkRequest":
         if (
-            self.chunk_size is not None
-            and self.overlap is not None
-            and self.overlap >= self.chunk_size
+            self.embedding_chunk_size is not None
+            and self.embedding_overlap is not None
+            and self.embedding_overlap >= self.embedding_chunk_size
         ):
-            raise ValueError("overlap must be smaller than chunk_size.")
+            raise ValueError(
+                "embedding_overlap must be smaller than "
+                "embedding_chunk_size."
+            )
         return self
 
 

@@ -15,5 +15,5 @@ def test_dedup_similarity_threshold_default() -> None:
 
 def test_chunk_size_defaults() -> None:
     s = Settings()
-    assert s.DEFAULT_CHUNK_SIZE == 500
-    assert s.DEFAULT_CHUNK_OVERLAP == 50
+    assert s.DEFAULT_EMBEDDING_CHUNK_SIZE == 500
+    assert s.DEFAULT_EMBEDDING_OVERLAP == 50

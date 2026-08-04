@@ -75,8 +75,8 @@ async def test_index_document_skips_already_indexed_chunks() -> None:
             collection_name="test",
             distance=DistanceMetric.COSINE,
             strategy=ChunkingStrategy.TOKEN,
-            chunk_size=200,
-            overlap=0,
+            embedding_chunk_size=200,
+            embedding_overlap=0,
         )
 
     # embed_chunks called with only the 1 new chunk
@@ -125,8 +125,8 @@ async def test_index_document_all_chunks_new_embeds_all() -> None:
             collection_name="test",
             distance=DistanceMetric.COSINE,
             strategy=ChunkingStrategy.TOKEN,
-            chunk_size=200,
-            overlap=0,
+            embedding_chunk_size=200,
+            embedding_overlap=0,
         )
 
     assert len(mock_embed.call_args[0][0]) == 2
@@ -149,6 +149,6 @@ async def test_index_document_rejects_oversized_chunk() -> None:
             collection_name="test",
             distance=DistanceMetric.COSINE,
             strategy=ChunkingStrategy.TOKEN,
-            chunk_size=1000,
-            overlap=0,
+            embedding_chunk_size=1000,
+            embedding_overlap=0,
         )

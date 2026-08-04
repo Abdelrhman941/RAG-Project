@@ -35,25 +35,25 @@ async def embed_document(
     upload_dir: Path,
     provider: BaseEmbeddingProvider,
     strategy: ChunkingStrategy,
-    chunk_size: int,
-    overlap: int,
+    embedding_chunk_size: int,
+    embedding_overlap: int,
 ) -> EmbeddingResponse:
     """Parse -> Chunk -> Embed pipeline.
 
     Stateless: nothing is persisted here.
     """
-    if chunk_size > provider.max_sequence_length:
+    if embedding_chunk_size > provider.max_sequence_length:
         raise EmbeddingError(
-            f"Requested chunk_size ({chunk_size}) exceeds model maximum context "
-            f"length ({provider.max_sequence_length})."
+            f"Requested embedding_chunk_size ({embedding_chunk_size}) exceeds model "
+            f"maximum context length ({provider.max_sequence_length})."
         )
 
     chunks = await chunk_document(
         document_id=document_id,
         upload_dir=upload_dir,
         strategy=strategy,
-        chunk_size=chunk_size,
-        overlap=overlap,
+        embedding_chunk_size=embedding_chunk_size,
+        embedding_overlap=embedding_overlap,
     )
 
     await embed_chunks(chunks, provider)

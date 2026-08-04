@@ -37,9 +37,9 @@ async def parse_document(
         extension = DocumentExtension(path.suffix.lower())
     except ValueError:
         raise UnsupportedDocumentTypeError(path.suffix) from None
-        
+
     parser = get_parser(extension)
     pages = await to_thread.run_sync(parser.parse, path)
     source_type = SourceType(extension.value.lstrip("."))
-    
+
     return pages, source_type

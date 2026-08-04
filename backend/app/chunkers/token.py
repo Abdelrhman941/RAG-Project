@@ -28,8 +28,8 @@ class RecursiveChunker(BaseChunker):
             return []
 
         splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            chunk_size=config.chunk_size,
-            chunk_overlap=config.overlap,
+            chunk_size=config.embedding_chunk_size,
+            chunk_overlap=config.embedding_overlap,
         )
         raw_chunks = splitter.split_text(text)
 

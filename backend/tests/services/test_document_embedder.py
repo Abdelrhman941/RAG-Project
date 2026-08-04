@@ -18,6 +18,6 @@ async def test_embed_document_rejects_oversized_chunk() -> None:
             upload_dir=MagicMock(),
             provider=mock_provider,
             strategy=ChunkingStrategy.TOKEN,
-            chunk_size=1000,
-            overlap=0,
+            embedding_chunk_size=1000,
+            embedding_overlap=0,
         )

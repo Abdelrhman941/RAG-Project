@@ -288,6 +288,7 @@ git commit -m "feat(config): add MIN_CHUNK_TOKENS and DEDUP_SIMILARITY_THRESHOLD
   ```python
   class SourceType(str, Enum):
       """The origin file type of a parsed document."""
+
       PDF = "pdf"
       TXT = "txt"
       MD = "md"
@@ -742,7 +743,7 @@ Expected: `ValidationError` / `TypeError` — fields do not exist yet.
 
   Add three new required fields after `content`:
   ```python
-  source_type: str                           # e.g. "pdf", "txt", "md"
+  source_type: str  # e.g. "pdf", "txt", "md"
   start_char: Annotated[int, Field(ge=0)]
   end_char: Annotated[int, Field(ge=0)]
   ```
@@ -813,12 +814,15 @@ async def test_chunk_document_skips_empty_pages(tmp_path):
     doc_id = uuid4()
     pages = ["", "   ", "Hello world. " * 20, ""]
 
-    with patch(
-        "app.services.document_chunker.parse_document",
-        new=AsyncMock(return_value=pages),
-    ), patch(
-        "app.services.document_chunker.find_document_path",
-        return_value=tmp_path / f"{doc_id}.txt",
+    with (
+        patch(
+            "app.services.document_chunker.parse_document",
+            new=AsyncMock(return_value=pages),
+        ),
+        patch(
+            "app.services.document_chunker.find_document_path",
+            return_value=tmp_path / f"{doc_id}.txt",
+        ),
     ):
         chunks = await chunk_document(
             document_id=doc_id,
@@ -839,12 +843,15 @@ async def test_chunk_document_all_empty_pages_returns_empty(tmp_path):
     doc_id = uuid4()
     pages = ["", "   "]
 
-    with patch(
-        "app.services.document_chunker.parse_document",
-        new=AsyncMock(return_value=pages),
-    ), patch(
-        "app.services.document_chunker.find_document_path",
-        return_value=tmp_path / f"{doc_id}.txt",
+    with (
+        patch(
+            "app.services.document_chunker.parse_document",
+            new=AsyncMock(return_value=pages),
+        ),
+        patch(
+            "app.services.document_chunker.find_document_path",
+            return_value=tmp_path / f"{doc_id}.txt",
+        ),
     ):
         chunks = await chunk_document(
             document_id=doc_id,
@@ -1260,6 +1267,7 @@ git commit -m "feat(indexer): add deduplication gate and enrich PointPayload"
 ```python
 # tests/api/test_index_endpoint_smoke.py
 """Smoke test: /index route exists and is wired after the Task 8 changes."""
+
 from uuid import uuid4
 from fastapi.testclient import TestClient
 from app.main import app
@@ -1311,7 +1319,7 @@ Expected: Passes before any changes (route already exists).
       strategy: ChunkingStrategy,
       chunk_size: int,
       overlap: int,
-      min_chunk_tokens: int,   # ← new
+      min_chunk_tokens: int,  # ← new
   ) -> EmbeddingResponse:
       """Parse → Chunk → Embed pipeline. Stateless: nothing is persisted here."""
       chunks = await chunk_document(

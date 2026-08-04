@@ -40,20 +40,23 @@ from unittest.mock import MagicMock, patch
 from app.core import SourceType, DocumentExtension
 from app.services.document_parser import parse_document
 
+
 @pytest.mark.asyncio
 async def test_parse_document_returns_text_and_source_type():
     doc_id = uuid4()
-    with patch("app.services.document_parser.find_document_path") as mock_find, \
-         patch("app.services.document_parser.get_parser") as mock_get_parser:
+    with (
+        patch("app.services.document_parser.find_document_path") as mock_find,
+        patch("app.services.document_parser.get_parser") as mock_get_parser,
+    ):
         mock_path = Path(f"/tmp/{doc_id}.pdf")
         mock_find.return_value = mock_path
-        
+
         mock_parser_instance = MagicMock()
         mock_parser_instance.parse.return_value = ["Page 1 text"]
         mock_get_parser.return_value = mock_parser_instance
-        
+
         pages, source_type = await parse_document(doc_id, Path("/tmp"))
-        
+
         assert pages == ["Page 1 text"]
         assert source_type == SourceType.PDF
 ```
@@ -63,8 +66,10 @@ Update the `mock_parse.return_value` to be a tuple `(["This is page one."], Sour
 **Crucially, ensure there is NO patch for `find_document_path` anywhere in this file, as `chunk_document` should absolutely not be doing duplicate file lookups anymore.**
 
 ```python
-    with patch("app.services.document_chunker.parse_document", new_callable=AsyncMock) as mock_parse:
-        mock_parse.return_value = (["This is page one."], SourceType.TXT)
+with patch(
+    "app.services.document_chunker.parse_document", new_callable=AsyncMock
+) as mock_parse:
+    mock_parse.return_value = (["This is page one."], SourceType.TXT)
 ```
 
 **In `tests/api/test_parse.py` (if it exists) or any other tests masking `parse_document`:**
@@ -80,19 +85,27 @@ Expected: FAIL due to missing tuple unpacking or incorrect return types.
 **In `app/services/document_parser.py`:**
 Modify the signature and return statement of `parse_document`:
 ```python
-from ..core import DocumentExtension, DocumentNotFoundError, UnsupportedDocumentTypeError, SourceType
+from ..core import (
+    DocumentExtension,
+    DocumentNotFoundError,
+    UnsupportedDocumentTypeError,
+    SourceType,
+)
 
-async def parse_document(document_id: UUID, upload_dir: Path) -> tuple[list[str], SourceType]:
+
+async def parse_document(
+    document_id: UUID, upload_dir: Path
+) -> tuple[list[str], SourceType]:
     # ... existing lookup ...
     try:
         extension = DocumentExtension(path.suffix.lower())
     except ValueError:
         raise UnsupportedDocumentTypeError(path.suffix) from None
-        
+
     parser = get_parser(extension)
     pages = await to_thread.run_sync(parser.parse, path)
     source_type = SourceType(extension.value.lstrip("."))
-    
+
     return pages, source_type
 ```
 

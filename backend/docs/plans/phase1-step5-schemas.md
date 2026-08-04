@@ -30,6 +30,7 @@ from uuid import uuid4
 from app.schemas.chunk import Chunk
 from app.core import SourceType
 
+
 def test_chunk_accepts_source_type() -> None:
     chunk = Chunk(
         chunk_id=uuid4(),
@@ -43,6 +44,7 @@ def test_chunk_accepts_source_type() -> None:
         source_type=SourceType.TXT,
     )
     assert chunk.source_type == SourceType.TXT
+
 
 def test_chunk_rejects_missing_source_type() -> None:
     with pytest.raises(Exception):
@@ -63,6 +65,7 @@ Create `tests/vectorstores/test_point_payload.py`:
 from uuid import uuid4
 from app.vectorstores.models import PointPayload
 from app.core import SourceType
+
 
 def test_point_payload_carries_source_type_and_offsets() -> None:
     payload = PointPayload(

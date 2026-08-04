@@ -17,9 +17,7 @@ async def test_get_existing_hashes_returns_matched_hashes() -> None:
 
     store._client = AsyncMock()
     store._client.collection_exists = AsyncMock(return_value=True)
-    store._client.scroll = AsyncMock(
-        return_value=([fake_point_1, fake_point_2], None)
-    )
+    store._client.scroll = AsyncMock(return_value=([fake_point_1, fake_point_2], None))
 
     result = await store.get_existing_hashes(
         collection_name="test",

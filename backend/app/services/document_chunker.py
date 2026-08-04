@@ -13,8 +13,8 @@ async def chunk_document(
     document_id: UUID,
     upload_dir: Path,
     strategy: ChunkingStrategy,
-    chunk_size: int,
-    overlap: int,
+    embedding_chunk_size: int,
+    embedding_overlap: int,
 ) -> list[Chunk]:
     """Parse a document then split it into ordered, deduplicated chunks.
 
@@ -33,8 +33,8 @@ async def chunk_document(
 
     config = ChunkingConfig(
         strategy=strategy,
-        chunk_size=chunk_size,
-        overlap=overlap,
+        embedding_chunk_size=embedding_chunk_size,
+        embedding_overlap=embedding_overlap,
         min_chunk_chars=settings.MIN_CHUNK_CHARS,
         source_type=source_type,
     )

@@ -151,6 +151,7 @@ from app.chunkers.normalizer import normalize_text
 
 # ── Line-ending normalization ──────────────────────────────────────────────
 
+
 def test_crlf_is_replaced_by_lf():
     assert normalize_text("a\r\nb") == "a\nb"
 
@@ -164,6 +165,7 @@ def test_mixed_crlf_and_cr_both_normalized():
 
 
 # ── Horizontal whitespace normalization ───────────────────────────────────
+
 
 def test_multiple_spaces_collapsed_to_one():
     assert normalize_text("hello   world") == "hello world"
@@ -184,6 +186,7 @@ def test_newlines_not_touched_by_whitespace_collapse():
 
 # ── Blank-line normalization ───────────────────────────────────────────────
 
+
 def test_three_newlines_collapsed_to_two():
     assert normalize_text("a\n\n\nb") == "a\n\nb"
 
@@ -199,6 +202,7 @@ def test_exactly_two_newlines_unchanged():
 
 # ── Leading / trailing whitespace ─────────────────────────────────────────
 
+
 def test_leading_spaces_stripped():
     assert normalize_text("  hello") == "hello"
 
@@ -212,6 +216,7 @@ def test_leading_newline_stripped():
 
 
 # ── Edge cases ────────────────────────────────────────────────────────────
+
 
 def test_empty_string_returns_empty_string():
     assert normalize_text("") == ""

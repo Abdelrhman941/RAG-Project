@@ -23,8 +23,8 @@ async def test_chunk_document_propagates_source_type() -> None:
             document_id=doc_id,
             upload_dir=Path("/tmp"),
             strategy=ChunkingStrategy.TOKEN,
-            chunk_size=10,
-            overlap=0,
+            embedding_chunk_size=10,
+            embedding_overlap=0,
         )
 
         assert len(chunks) > 0
@@ -56,8 +56,8 @@ async def test_chunk_document_dedup_and_contiguous_index() -> None:
             document_id=doc_id,
             upload_dir=Path("/tmp"),
             strategy=ChunkingStrategy.TOKEN,
-            chunk_size=200,
-            overlap=0,
+            embedding_chunk_size=200,
+            embedding_overlap=0,
         )
 
     # The second identical footer should be dropped.

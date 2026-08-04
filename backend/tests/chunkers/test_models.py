@@ -7,8 +7,8 @@ from app.core import ChunkingStrategy, SourceType
 def test_chunking_config_accepts_min_chunk_chars() -> None:
     cfg = ChunkingConfig(
         strategy=ChunkingStrategy.TOKEN,
-        chunk_size=512,
-        overlap=50,
+        embedding_chunk_size=512,
+        embedding_overlap=50,
         min_chunk_chars=10,
         source_type=SourceType.PDF,
     )

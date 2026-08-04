@@ -18,23 +18,26 @@ class ChunkingConfig:
     """Configuration shared by all chunking strategies."""
 
     strategy: ChunkingStrategy
-    chunk_size: int
-    overlap: int
+    embedding_chunk_size: int
+    embedding_overlap: int
     min_chunk_chars: int
     source_type: SourceType
 
     def __post_init__(self) -> None:
-        if self.chunk_size <= 0:
-            raise InvalidChunkingParametersError("chunk_size must be greater than 0.")
-
-        if self.overlap < 0:
+        if self.embedding_chunk_size <= 0:
             raise InvalidChunkingParametersError(
-                "overlap must be greater than or equal to 0."
+                "embedding_chunk_size must be "
+                "greater than 0."
             )
 
-        if self.overlap >= self.chunk_size:
+        if self.embedding_overlap < 0:
             raise InvalidChunkingParametersError(
-                "overlap must be smaller than chunk_size."
+                "embedding_overlap must be greater than or equal to 0."
+            )
+
+        if self.embedding_overlap >= self.embedding_chunk_size:
+            raise InvalidChunkingParametersError(
+                "embedding_overlap must be smaller than embedding_chunk_size."
             )
 
         if self.min_chunk_chars <= 0:
