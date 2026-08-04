@@ -56,6 +56,8 @@ class SentenceTransformerProvider(BaseEmbeddingProvider):
         self,
         texts: Sequence[str],
     ) -> list[list[float]]:
+        from typing import cast
+
         if not texts:
             return []
         try:
@@ -65,7 +67,7 @@ class SentenceTransformerProvider(BaseEmbeddingProvider):
                 normalize_embeddings=self._normalize_embeddings,
                 convert_to_numpy=True,
             )
-            return vectors.tolist()
+            return cast(list[list[float]], vectors.tolist())
         except Exception as exc:
             raise EmbeddingError(
                 f"Failed to generate document embeddings using '{self._model_name}'."

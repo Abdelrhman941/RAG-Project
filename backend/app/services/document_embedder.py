@@ -37,6 +37,8 @@ async def embed_document(
     strategy: ChunkingStrategy,
     embedding_chunk_size: int,
     embedding_overlap: int,
+    prompt_chunk_size: int | None = None,
+    prompt_overlap: int | None = None,
 ) -> EmbeddingResponse:
     """Parse -> Chunk -> Embed pipeline.
 
@@ -54,6 +56,8 @@ async def embed_document(
         strategy=strategy,
         embedding_chunk_size=embedding_chunk_size,
         embedding_overlap=embedding_overlap,
+        prompt_chunk_size=prompt_chunk_size,
+        prompt_overlap=prompt_overlap,
     )
 
     await embed_chunks(chunks, provider)

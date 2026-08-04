@@ -17,10 +17,13 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _BYTES_PER_MB = 1024 * 1024
 
 
+from typing import cast
+
+
 @cache
 def get_project_metadata() -> dict[str, str]:
     with (_PROJECT_ROOT / "pyproject.toml").open("rb") as f:
-        return tomllib.load(f)["project"]
+        return cast(dict[str, str], tomllib.load(f)["project"])
 
 
 _PROJECT_METADATA = get_project_metadata()
@@ -46,6 +49,9 @@ class Settings(BaseSettings):
     # ------------ Chunking ------------
     DEFAULT_EMBEDDING_CHUNK_SIZE: int = Field(default=500, gt=0)
     DEFAULT_EMBEDDING_OVERLAP: int = Field(default=50, ge=0)
+    DEFAULT_PROMPT_CHUNK_SIZE: int = Field(default=1000, gt=0)
+    DEFAULT_PROMPT_OVERLAP: int = Field(default=100, ge=0)
+    MAX_PROMPT_CHUNK_SIZE: int = Field(default=3000, gt=0)
     MIN_CHUNK_CHARS: int = Field(default=50, gt=0)
     DEDUP_SIMILARITY_THRESHOLD: float = Field(default=0.97, ge=0.0, le=1.0)
 

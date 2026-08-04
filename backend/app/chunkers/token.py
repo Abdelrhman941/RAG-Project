@@ -27,19 +27,72 @@ class RecursiveChunker(BaseChunker):
         if not text:
             return []
 
-        splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            chunk_size=config.embedding_chunk_size,
-            chunk_overlap=config.embedding_overlap,
-        )
-        raw_chunks = splitter.split_text(text)
+        import uuid
 
-        # 1. Compute raw offsets before merging
+        if config.prompt_chunk_size is not None and config.prompt_overlap is not None:
+            parent_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=config.prompt_chunk_size,
+                chunk_overlap=config.prompt_overlap,
+            )
+            child_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=config.embedding_chunk_size,
+                chunk_overlap=config.embedding_overlap,
+            )
+
+            p_chunks = parent_splitter.split_text(text)
+            p_tuples = self._compute_offsets(p_chunks, text)
+
+            spans = []
+            for p_content, p_start, _p_end in p_tuples:
+                p_id = str(uuid.uuid4())
+                c_chunks = child_splitter.split_text(p_content)
+                c_tuples_rel = self._compute_offsets(c_chunks, p_content)
+                merged_c_tuples = self._merge_small_chunks(
+                    c_tuples_rel, config.min_chunk_chars
+                )
+
+                for c_content, c_rel_start, c_rel_end in merged_c_tuples:
+                    spans.append(
+                        ChunkSpan(
+                            content=c_content,
+                            start_char=p_start + c_rel_start,
+                            end_char=p_start + c_rel_end,
+                            source_type=config.source_type,
+                            parent_chunk_id=p_id,
+                            parent_content=p_content,
+                        )
+                    )
+            return spans
+
+        else:
+            splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=config.embedding_chunk_size,
+                chunk_overlap=config.embedding_overlap,
+            )
+            raw_chunks = splitter.split_text(text)
+            raw_tuples = self._compute_offsets(raw_chunks, text)
+            merged_tuples = self._merge_small_chunks(raw_tuples, config.min_chunk_chars)
+
+            return [
+                ChunkSpan(
+                    content=t[0],
+                    start_char=t[1],
+                    end_char=t[2],
+                    source_type=config.source_type,
+                )
+                for t in merged_tuples
+            ]
+
+    @staticmethod
+    def _compute_offsets(
+        chunks: list[str], source_text: str
+    ) -> list[tuple[str, int, int]]:
         raw_tuples: list[tuple[str, int, int]] = []
         search_start = 0
-        for chunk_text in raw_chunks:
-            start = text.find(chunk_text, search_start)
+        for chunk_text in chunks:
+            start = source_text.find(chunk_text, search_start)
             if start == -1:
-                start = text.find(chunk_text)
+                start = source_text.find(chunk_text)
             if start == -1:
                 logger.warning(
                     f"Could not find chunk in normalized text, dropping chunk. "
@@ -50,20 +103,7 @@ class RecursiveChunker(BaseChunker):
             end = start + len(chunk_text)
             raw_tuples.append((chunk_text, start, end))
             search_start = end
-
-        # 2. Merge small chunks
-        merged_tuples = self._merge_small_chunks(raw_tuples, config.min_chunk_chars)
-
-        # 3. Build spans
-        return [
-            ChunkSpan(
-                content=t[0],
-                start_char=t[1],
-                end_char=t[2],
-                source_type=config.source_type,
-            )
-            for t in merged_tuples
-        ]
+        return raw_tuples
 
     @staticmethod
     def _merge_small_chunks(

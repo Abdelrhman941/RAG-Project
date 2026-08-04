@@ -17,6 +17,8 @@ class Chunk(BaseModel):
     char_count: Annotated[int, Field(ge=0)]
     source_type: SourceType
     content_hash: str  # SHA-256 hex digest of chunk content
+    parent_chunk_id: UUID4 | None = None
+    parent_content: str | None = None
 
     @model_validator(mode="after")
     def validate_span_consistency(self) -> "Chunk":
@@ -33,6 +35,8 @@ class ChunkRequest(BaseModel):
     strategy: ChunkingStrategy = ChunkingStrategy.TOKEN
     embedding_chunk_size: int | None = Field(default=None, gt=0)
     embedding_overlap: int | None = Field(default=None, ge=0)
+    prompt_chunk_size: int | None = Field(default=None, gt=0)
+    prompt_overlap: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_overlap_against_chunk_size(self) -> "ChunkRequest":
@@ -42,8 +46,21 @@ class ChunkRequest(BaseModel):
             and self.embedding_overlap >= self.embedding_chunk_size
         ):
             raise ValueError(
-                "embedding_overlap must be smaller than "
-                "embedding_chunk_size."
+                "embedding_overlap must be smaller than embedding_chunk_size."
+            )
+        if (
+            self.prompt_chunk_size is not None
+            and self.prompt_overlap is not None
+            and self.prompt_overlap >= self.prompt_chunk_size
+        ):
+            raise ValueError("prompt_overlap must be smaller than prompt_chunk_size.")
+        if (
+            self.embedding_chunk_size is not None
+            and self.prompt_chunk_size is not None
+            and self.embedding_chunk_size >= self.prompt_chunk_size
+        ):
+            raise ValueError(
+                "embedding_chunk_size must be strictly smaller than prompt_chunk_size."
             )
         return self
 

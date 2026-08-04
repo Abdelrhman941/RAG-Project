@@ -17,3 +17,6 @@ def test_chunk_size_defaults() -> None:
     s = Settings()
     assert s.DEFAULT_EMBEDDING_CHUNK_SIZE == 500
     assert s.DEFAULT_EMBEDDING_OVERLAP == 50
+    assert s.DEFAULT_PROMPT_CHUNK_SIZE == 1000
+    assert s.DEFAULT_PROMPT_OVERLAP == 100
+    assert s.MAX_PROMPT_CHUNK_SIZE == 3000

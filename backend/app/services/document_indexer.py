@@ -39,6 +39,8 @@ def _build_points(
                 end_char=chunk.end_char,
                 source_type=chunk.source_type,
                 content_hash=chunk.content_hash,
+                parent_chunk_id=chunk.parent_chunk_id,
+                parent_content=chunk.parent_content,
             ),
         )
         for chunk, vector in zip(chunks, vectors, strict=True)
@@ -55,6 +57,8 @@ async def index_document(
     strategy: ChunkingStrategy,
     embedding_chunk_size: int,
     embedding_overlap: int,
+    prompt_chunk_size: int | None = None,
+    prompt_overlap: int | None = None,
 ) -> IndexingResponse:
     """Parse -> Chunk -> Embed -> Upsert pipeline.
 
@@ -74,6 +78,8 @@ async def index_document(
         strategy=strategy,
         embedding_chunk_size=embedding_chunk_size,
         embedding_overlap=embedding_overlap,
+        prompt_chunk_size=prompt_chunk_size,
+        prompt_overlap=prompt_overlap,
     )
 
     if not chunks:

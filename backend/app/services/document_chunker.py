@@ -15,6 +15,8 @@ async def chunk_document(
     strategy: ChunkingStrategy,
     embedding_chunk_size: int,
     embedding_overlap: int,
+    prompt_chunk_size: int | None = None,
+    prompt_overlap: int | None = None,
 ) -> list[Chunk]:
     """Parse a document then split it into ordered, deduplicated chunks.
 
@@ -35,6 +37,8 @@ async def chunk_document(
         strategy=strategy,
         embedding_chunk_size=embedding_chunk_size,
         embedding_overlap=embedding_overlap,
+        prompt_chunk_size=prompt_chunk_size,
+        prompt_overlap=prompt_overlap,
         min_chunk_chars=settings.MIN_CHUNK_CHARS,
         source_type=source_type,
     )
@@ -58,6 +62,10 @@ async def chunk_document(
                 char_count=len(span.content),
                 source_type=span.source_type,
                 content_hash=hashlib.sha256(span.content.encode()).hexdigest(),
+                parent_chunk_id=UUID(span.parent_chunk_id)
+                if span.parent_chunk_id
+                else None,
+                parent_content=span.parent_content,
             )
 
             if is_duplicate(candidate, chunks, settings.DEDUP_SIMILARITY_THRESHOLD):

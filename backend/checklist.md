@@ -54,8 +54,8 @@
 * [ ] Use one consistent chunking policy for all text-based inputs.
 * [ ] Tune `chunk_size` and `overlap` using a real corpus, not guesses.
 * [ ] Add a guardrail for maximum chunk size before embedding.
-* [ ] Separate storage chunk size from LLM prompt chunk size when needed.
-* [ ] Add parent or section references for each chunk.
+* [x] Separate storage chunk size from LLM prompt chunk size when needed.
+* [x] Add parent or section references for each chunk.
 * [ ] Support small-to-big retrieval:
 
   * [ ] small chunk for matching

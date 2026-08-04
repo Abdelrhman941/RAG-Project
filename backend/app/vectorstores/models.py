@@ -23,6 +23,8 @@ class PointPayload(BaseModel):
     start_char: Annotated[int, Field(ge=0)]
     end_char: Annotated[int, Field(ge=0)]
     content_hash: str  # SHA-256 hex digest of chunk content
+    parent_chunk_id: UUID4 | None = None
+    parent_content: str | None = None
 
 
 class PointData(BaseModel):

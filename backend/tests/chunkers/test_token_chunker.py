@@ -38,6 +38,38 @@ def test_normal_text_returns_spans_with_correct_source_type() -> None:
     assert all(s.source_type == PDF for s in spans)
 
 
+def test_hierarchical_chunking_creates_parent_references() -> None:
+    chunker = RecursiveChunker()
+    text = "word " * 600
+    # prompt_chunk_size=200, embedding_chunk_size=50
+    # Expect multiple parents, each with multiple children
+    cfg = ChunkingConfig(
+        strategy=ChunkingStrategy.TOKEN,
+        embedding_chunk_size=50,
+        embedding_overlap=5,
+        prompt_chunk_size=200,
+        prompt_overlap=20,
+        min_chunk_chars=10,
+        source_type=SourceType.TXT,
+    )
+    spans = chunker.chunk(text, cfg)
+
+    assert len(spans) > 0
+    # Check that all spans have parent fields populated
+    assert all(s.parent_chunk_id is not None for s in spans)
+    assert all(s.parent_content is not None for s in spans)
+
+    # Check that children share the same parent_chunk_id if they came from
+    # the same parent.
+    parent_ids = {s.parent_chunk_id for s in spans}
+    assert len(parent_ids) > 1
+
+    # Verify child offsets align with original text
+    for span in spans:
+        assert text[span.start_char : span.end_char] == span.content
+        assert span.parent_content is not None and span.parent_content in text
+
+
 def test_tiny_chunk_is_merged_into_neighbor() -> None:
     chunker = RecursiveChunker()
     long_part = "word " * 60
