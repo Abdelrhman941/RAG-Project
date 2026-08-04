@@ -1,11 +1,17 @@
 from ..core import DocumentExtension, UnsupportedDocumentTypeError
 from .base import BaseParser
 from .md import MdParser
+from .ocr import TesseractOCREngine
 from .pdf import PdfParser
+from .tables import PdfPlumberTableExtractor
 from .txt import TxtParser
 
 _PARSER_REGISTRY: dict[DocumentExtension, BaseParser] = {
-    DocumentExtension.PDF: PdfParser(),
+    DocumentExtension.PDF: PdfParser(
+        ocr_engine=TesseractOCREngine(),
+        table_extractor=PdfPlumberTableExtractor(),
+        ocr_threshold=50
+    ),
     DocumentExtension.TXT: TxtParser(),
     DocumentExtension.MD: MdParser(),
 }

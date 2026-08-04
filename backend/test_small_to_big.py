@@ -1,20 +1,21 @@
 import asyncio
 import logging
-from pathlib import Path
 from uuid import uuid4
 
 from app.core.config import get_settings
 from app.core.enums import ChunkingStrategy
-from app.embedders.factory import get_embedding_provider, get_sparse_provider, get_reranker
-from app.services.document_parser import parse_document
-from app.services.document_chunker import chunk_document
+from app.embedders.factory import (
+    get_embedding_provider,
+    get_reranker,
+    get_sparse_provider,
+)
 from app.services.document_indexer import index_document
 from app.services.retrieval_service import retrieve
 from app.vectorstores.factory import get_vector_store
 
 logging.basicConfig(level=logging.WARNING)
 
-async def test_small_to_big():
+async def test_small_to_big() -> None:
     settings = get_settings()
     doc_id = uuid4()
     

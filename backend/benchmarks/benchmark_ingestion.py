@@ -24,7 +24,10 @@ CORPUS_DIR = BENCHMARKS_DIR / "corpus"
 RESULTS_DIR = BENCHMARKS_DIR / "results"
 
 
-async def benchmark_document(file_path: Path) -> dict:
+from typing import Any
+
+
+async def benchmark_document(file_path: Path) -> dict[str, Any]:
     settings = get_settings()
     doc_id = uuid4()
 
@@ -106,7 +109,7 @@ async def benchmark_document(file_path: Path) -> dict:
     return metrics
 
 
-async def run_benchmarks():
+async def run_benchmarks() -> None:
     if not CORPUS_DIR.exists():
         logger.error(
             f"Corpus directory {CORPUS_DIR} not found. Run generate_corpus.py first."

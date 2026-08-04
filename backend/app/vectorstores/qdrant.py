@@ -90,6 +90,12 @@ class QdrantVectorStore(BaseVectorStore):
         except (ResponseHandlingException, UnexpectedResponse) as exc:
             raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
 
+    async def delete_collection(self, collection_name: str) -> None:
+        try:
+            await self._client.delete_collection(collection_name=collection_name)
+        except (ResponseHandlingException, UnexpectedResponse) as exc:
+            raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
+
     async def _ensure_dimension_matches(
         self, collection_name: str, dimension: int
     ) -> None:

@@ -6,7 +6,11 @@ from ..core import (
     UnsupportedEmbeddingProviderError,
     get_settings,
 )
-from .base import BaseEmbeddingProvider, BaseRerankerProvider, BaseSparseEmbeddingProvider
+from .base import (
+    BaseEmbeddingProvider,
+    BaseRerankerProvider,
+    BaseSparseEmbeddingProvider,
+)
 from .cross_encoder import CrossEncoderReranker
 from .fastembed_sparse import FastEmbedSparseProvider
 from .sentence_transformer import SentenceTransformerProvider

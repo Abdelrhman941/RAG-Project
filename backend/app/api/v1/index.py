@@ -5,7 +5,7 @@ from fastapi import APIRouter, status
 from ...core import ChunkingStrategy
 from ...schemas import IndexingResponse
 from ...services import index_document
-from ..deps import EmbeddingProviderDep, SettingsDep, VectorStoreDep, SparseProviderDep
+from ..deps import EmbeddingProviderDep, SettingsDep, SparseProviderDep, VectorStoreDep
 
 index_router = APIRouter(prefix="/documents", tags=["Documents"])
 

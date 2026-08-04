@@ -8,14 +8,14 @@ CORPUS_DIR = Path(__file__).parent / "corpus"
 fake = Faker()
 
 
-def generate_txt(path: Path, num_paragraphs: int):
+def generate_txt(path: Path, num_paragraphs: int) -> None:
     with path.open("w", encoding="utf-8") as f:
         for _ in range(num_paragraphs):
             f.write(fake.paragraph(nb_sentences=10))
             f.write("\n\n")
 
 
-def generate_md(path: Path, num_sections: int):
+def generate_md(path: Path, num_sections: int) -> None:
     with path.open("w", encoding="utf-8") as f:
         f.write("# Synthetic Markdown Document\n\n")
         for i in range(num_sections):
@@ -29,7 +29,7 @@ def generate_md(path: Path, num_sections: int):
                 f.write(f"```python\ndef test_{i}():\n    pass\n```\n\n")
 
 
-def generate_pdf(path: Path, num_pages: int):
+def generate_pdf(path: Path, num_pages: int) -> None:
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -53,7 +53,7 @@ def generate_pdf(path: Path, num_pages: int):
     pdf.output(str(path))
 
 
-def main():
+def main() -> None:
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
 
     print("Generating small.txt (10 paragraphs)...")

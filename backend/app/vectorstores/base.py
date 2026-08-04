@@ -29,6 +29,10 @@ class BaseVectorStore(ABC):
     ) -> None:
         """Create a new collection with the required vector dimension & distance metric.
         Ignores the operation if the collection already exists."""
+        
+    @abstractmethod
+    async def delete_collection(self, collection_name: str) -> None:
+        """Delete an entire collection."""
 
     # ---- Points ----
     @abstractmethod
