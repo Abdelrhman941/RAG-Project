@@ -11,12 +11,12 @@
 
 ## P0 — Baseline and safety
 
-* [ ] Preserve the current endpoint contracts before refactoring.
-* [ ] Record baseline outputs for each endpoint on a fixed sample corpus.
-* [ ] Measure current latency for parse, chunk, embed, index, retrieve, and chat.
-* [ ] Log chunk counts, chunk sizes, and retrieval result counts.
-* [ ] Make sure test fixtures and imports do not depend on pre-refactor names.
-* [ ] Keep the data flow explicit for each document lifecycle stage.
+* [x] Preserve the current endpoint contracts before refactoring.
+* [x] Record baseline outputs for each endpoint on a fixed sample corpus.
+* [x] Measure current latency for parse, chunk, embed, index, retrieve, and chat.
+* [x] Log chunk counts, chunk sizes, and retrieval result counts.
+* [x] Make sure test fixtures and imports do not depend on pre-refactor names.
+* [x] Keep the data flow explicit for each document lifecycle stage.
 
 ---
 
@@ -52,7 +52,7 @@
 
 * [x] Make chunking operate on normalized text, not file shape alone.
 * [x] Use one consistent chunking policy for all text-based inputs.
-* [ ] Tune `chunk_size` and `overlap` using a real corpus, not guesses.
+* [x] Tune `chunk_size` and `overlap` using a real corpus, not guesses.
 * [x] Add a guardrail for maximum chunk size before embedding.
 * [x] Separate storage chunk size from LLM prompt chunk size when needed.
 * [x] Add parent or section references for each chunk.

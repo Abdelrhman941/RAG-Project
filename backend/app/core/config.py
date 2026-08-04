@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = _PROJECT_ROOT / "data" / "uploads"
 
     # ------------ Chunking ------------
-    DEFAULT_EMBEDDING_CHUNK_SIZE: int = Field(default=500, gt=0)
+    DEFAULT_EMBEDDING_CHUNK_SIZE: int = Field(default=256, gt=0)
     DEFAULT_EMBEDDING_OVERLAP: int = Field(default=50, ge=0)
     DEFAULT_PROMPT_CHUNK_SIZE: int = Field(default=1000, gt=0)
     DEFAULT_PROMPT_OVERLAP: int = Field(default=100, ge=0)
