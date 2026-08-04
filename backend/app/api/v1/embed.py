@@ -24,7 +24,7 @@ async def embed_uploaded_document(
         document_id=document_id,
         upload_dir=settings.UPLOAD_DIR,
         provider=provider,
-        strategy=ChunkingStrategy.CHARACTER,
+        strategy=ChunkingStrategy.TOKEN,
         chunk_size=settings.DEFAULT_CHUNK_SIZE,
         overlap=settings.DEFAULT_CHUNK_OVERLAP,
     )

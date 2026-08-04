@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Body, status
 
+from ...core import DocumentStatus
 from ...schemas import ChunkRequest, ChunkResponse
 from ...services import chunk_document
 from ..deps import SettingsDep
@@ -37,6 +38,7 @@ async def chunk_uploaded_document(
 
     return ChunkResponse(
         document_id=document_id,
+        status=DocumentStatus.CHUNKING,
         total_chunks=len(chunks),
         chunks=chunks,
     )

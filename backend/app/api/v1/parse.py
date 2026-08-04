@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
+from ...core import DocumentStatus
 from ...schemas import ParsedDocument
 from ...services import parse_document
 from ..deps import SettingsDep
@@ -22,4 +23,8 @@ async def parse_uploaded_document(
     settings: SettingsDep,
 ) -> ParsedDocument:
     pages = await parse_document(document_id, settings.UPLOAD_DIR)
-    return ParsedDocument(document_id=document_id, pages=pages)
+    return ParsedDocument(
+        document_id=document_id,
+        status=DocumentStatus.PARSING,
+        pages=pages,
+    )

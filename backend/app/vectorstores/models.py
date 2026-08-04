@@ -12,7 +12,6 @@ class PointPayload(BaseModel):
     """
 
     model_config = ConfigDict(frozen=True)
-
     document_id: UUID4
     chunk_id: UUID4
     chunk_index: Annotated[int, Field(ge=0)]
@@ -30,7 +29,6 @@ class PointData(BaseModel):
     """
 
     model_config = ConfigDict(frozen=True)
-
     id: UUID4
     vector: Annotated[list[float], Field(min_length=1)]
     payload: PointPayload

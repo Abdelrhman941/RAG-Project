@@ -3,7 +3,7 @@ from collections.abc import Sequence
 
 from ..core import DistanceMetric
 from ..retrieval import SearchResult
-from ..schemas import PointData
+from .models import PointData
 
 
 class BaseVectorStore(ABC):

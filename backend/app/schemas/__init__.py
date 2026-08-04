@@ -4,7 +4,6 @@ from .embedding import EmbeddingResponse
 from .generation import ChatRequest, ChatResponse, CitationSchema
 from .indexing import IndexingResponse
 from .parsed_document import ParsedDocument
-from .point import PointData, PointPayload
 from .retrieval import RetrievalRequest, RetrievalResponse, RetrievedChunk
 
 __all__ = [
@@ -15,8 +14,6 @@ __all__ = [
     "EmbeddingResponse",
     "IndexingResponse",
     "ParsedDocument",
-    "PointData",
-    "PointPayload",
     "RetrievalRequest",
     "RetrievalResponse",
     "RetrievedChunk",

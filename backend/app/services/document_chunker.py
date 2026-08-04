@@ -1,22 +1,10 @@
-import uuid
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from ..chunkers import get_chunker
-from ..core import ChunkingStrategy, InvalidChunkingParametersError
+from ..chunkers import ChunkingConfig, get_chunker
+from ..core import ChunkingStrategy
 from ..schemas import Chunk
 from .document_parser import parse_document
-
-
-def _validate_parameters(chunk_size: int, overlap: int) -> None:
-    if chunk_size <= 0:
-        raise InvalidChunkingParametersError("chunk_size must be greater than 0.")
-    if overlap < 0:
-        raise InvalidChunkingParametersError(
-            "overlap must be greater than or equal to 0."
-        )
-    if overlap >= chunk_size:
-        raise InvalidChunkingParametersError("overlap must be smaller than chunk_size.")
 
 
 async def chunk_document(
@@ -26,35 +14,37 @@ async def chunk_document(
     chunk_size: int,
     overlap: int,
 ) -> list[Chunk]:
-    """Find -> Parse -> Chunk pipeline.
+    """Parse a document then split it into ordered chunks."""
 
-    Re-uses parse_document rather than reading the raw file again: the
-    Parser is the single source of truth for extracted text, and the
-    Chunker only ever operates on that output.
-    """
-    _validate_parameters(chunk_size, overlap)
-
-    pages = await parse_document(document_id, upload_dir)
-    chunker = get_chunker(strategy)
-
+    config = ChunkingConfig(
+        strategy=strategy,
+        chunk_size=chunk_size,
+        overlap=overlap,
+    )
+    pages = await parse_document(
+        document_id=document_id,
+        upload_dir=upload_dir,
+    )
+    chunker = get_chunker(config.strategy)
     chunks: list[Chunk] = []
-    chunk_index = 0
+    current_chunk_index = 0
+
     for page_number, page_text in enumerate(pages, start=1):
-        for content, start_char, end_char in chunker.chunk(
-            page_text, chunk_size, overlap
-        ):
+        if not page_text.strip():
+            continue
+
+        for span in chunker.chunk(page_text, config):
             chunks.append(
                 Chunk(
-                    chunk_id=uuid.uuid4(),
+                    chunk_id=uuid4(),
                     document_id=document_id,
-                    chunk_index=chunk_index,
+                    chunk_index=current_chunk_index,
                     page_number=page_number,
-                    content=content,
-                    start_char=start_char,
-                    end_char=end_char,
-                    char_count=len(content),
+                    content=span.content,
+                    start_char=span.start_char,
+                    end_char=span.end_char,
+                    char_count=len(span.content),
                 )
             )
-            chunk_index += 1
-
+            current_chunk_index += 1
     return chunks

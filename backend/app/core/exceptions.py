@@ -28,9 +28,17 @@ Exception
         ├── LLMConfigError                   "Here"
         │   └── UnknownProviderError
         └── LLMProviderError
+
+Every exception carries `status_code`, the HTTP status the global
+handler in `main.py` returns for it. Subclasses that don't set their
+own inherit `DocumentError.status_code` (500) — see `LLMConfigError`
+and `UnknownProviderError`, which previously had no registered handler
+at all and silently fell through to FastAPI's default 500.
 """
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from uuid import UUID
 
 from .enums import (
@@ -45,13 +53,19 @@ from .enums import (
 class DocumentError(Exception):
     """Base exception for document ingestion pipeline."""
 
+    status_code: int = 500
+
 
 class EmptyFileError(DocumentError):
     """Raised when an uploaded file has zero bytes."""
 
+    status_code = 400
+
 
 class FileTooLargeError(DocumentError):
     """Raised when an uploaded file exceeds the configured size limit."""
+
+    status_code = 413
 
     def __init__(self, max_bytes: int):
         self.max_bytes = max_bytes
@@ -61,6 +75,8 @@ class FileTooLargeError(DocumentError):
 class DocumentNotFoundError(DocumentError):
     """Raised when a document cannot be found."""
 
+    status_code = 404
+
     def __init__(self, document_id: UUID):
         self.document_id = document_id
         super().__init__(f"Document '{document_id}' was not found.")
@@ -69,18 +85,27 @@ class DocumentNotFoundError(DocumentError):
 class UnsupportedDocumentTypeError(DocumentError):
     """Raised when no parser supports the given document type."""
 
-    def __init__(self, extension: str):
+    status_code = 415
+
+    def __init__(self, extension: str, allowed: Iterable[str] | None = None):
         self.extension = extension
-        super().__init__(f"No parser registered for extension '{extension}'.")
+        message = f"Unsupported file type '{extension}'."
+        if allowed:
+            message += f" Allowed: {', '.join(allowed)}."
+        super().__init__(message)
 
 
 class ParsingError(DocumentError):
     """Raised when document parsing fails."""
 
+    status_code = 500
+
 
 # -------------- Chunking ----------------------------
 class UnsupportedChunkingStrategyError(DocumentError):
     """Raised when no chunker supports the requested strategy."""
+
+    status_code = 501
 
     def __init__(self, strategy: ChunkingStrategy):
         self.strategy = strategy
@@ -90,10 +115,14 @@ class UnsupportedChunkingStrategyError(DocumentError):
 class InvalidChunkingParametersError(DocumentError):
     """Raised when chunking parameters are invalid."""
 
+    status_code = 422
+
 
 # -------------- Embedding ----------------------------
 class UnsupportedEmbeddingProviderError(DocumentError):
     """Raised when no embedding provider matches the configured provider."""
+
+    status_code = 500
 
     def __init__(self, provider: EmbeddingProviderName):
         self.provider = provider
@@ -102,6 +131,8 @@ class UnsupportedEmbeddingProviderError(DocumentError):
 
 class EmbeddingError(DocumentError):
     """Raised when embedding generation fails."""
+
+    status_code = 500
 
 
 # -------------- Vector Store / Indexing ----------------------------
@@ -112,6 +143,8 @@ class VectorStoreError(DocumentError):
 class UnsupportedVectorStoreProviderError(VectorStoreError):
     """Raised when no vector store provider matches the configured provider."""
 
+    status_code = 500
+
     def __init__(self, provider: VectorStoreProvider):
         self.provider = provider
         super().__init__(f"No vector store registered for '{provider.value}'.")
@@ -120,9 +153,13 @@ class UnsupportedVectorStoreProviderError(VectorStoreError):
 class VectorStoreUnavailableError(VectorStoreError):
     """Raised when the configured vector store is unreachable."""
 
+    status_code = 503
+
 
 class VectorDimensionMismatchError(VectorStoreError):
     """Raised when embedding dimension differs from collection dimension."""
+
+    status_code = 409
 
     def __init__(self, expected: int, actual: int):
         self.expected = expected
@@ -136,14 +173,20 @@ class VectorDimensionMismatchError(VectorStoreError):
 class IndexingError(VectorStoreError):
     """Raised when indexing vectors fails."""
 
+    status_code = 500
+
 
 # -------------- Retrieval ----------------------------
 class RetrievalError(VectorStoreError):
     """Raised when semantic retrieval fails."""
 
+    status_code = 500
+
 
 class CollectionNotFoundError(VectorStoreError):
     """Raised when the requested collection does not exist."""
+
+    status_code = 404
 
     def __init__(self, collection_name: str):
         self.collection_name = collection_name
@@ -174,3 +217,5 @@ class UnknownProviderError(LLMConfigError):
 
 class LLMProviderError(LLMError):
     """Raised when an LLM provider request fails."""
+
+    status_code = 500

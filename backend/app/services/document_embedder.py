@@ -1,15 +1,33 @@
-import logging
+from collections.abc import Sequence
 from pathlib import Path
 from uuid import UUID
 
 from anyio import to_thread
 
-from ..core import ChunkingStrategy, DocumentStatus
+from ..core import ChunkingStrategy, DocumentStatus, EmbeddingError
 from ..embedders import BaseEmbeddingProvider
-from ..schemas import EmbeddingResponse
+from ..schemas import Chunk, EmbeddingResponse
 from .document_chunker import chunk_document
 
-logger = logging.getLogger(__name__)
+
+async def embed_chunks(
+    chunks: Sequence[Chunk],
+    provider: BaseEmbeddingProvider,
+) -> list[list[float]]:
+    """Embed chunk texts into vectors using the configured provider."""
+    texts = [chunk.content for chunk in chunks]
+    if not texts:
+        return []
+
+    vectors = await to_thread.run_sync(provider.embed_documents, texts)
+
+    if len(vectors) != len(chunks):
+        raise EmbeddingError(
+            f"Embedding provider returned {len(vectors)} vectors for "
+            f"{len(chunks)} chunks."
+        )
+
+    return vectors
 
 
 async def embed_document(
@@ -20,7 +38,10 @@ async def embed_document(
     chunk_size: int,
     overlap: int,
 ) -> EmbeddingResponse:
-    """Parse -> Chunk -> Embed pipeline. Stateless: nothing is persisted here."""
+    """Parse -> Chunk -> Embed pipeline.
+
+    Stateless: nothing is persisted here.
+    """
     chunks = await chunk_document(
         document_id=document_id,
         upload_dir=upload_dir,
@@ -29,18 +50,11 @@ async def embed_document(
         overlap=overlap,
     )
 
-    texts = [chunk.content for chunk in chunks]
-
-    try:
-        await to_thread.run_sync(provider.embed, texts)
-    except Exception:
-        logger.exception("Embedding failed")
-        raise
-
+    await embed_chunks(chunks, provider)
     return EmbeddingResponse(
         document_id=document_id,
         total_chunks=len(chunks),
         embedding_model=provider.model_name,
-        dimension=provider.dimension,
-        status=DocumentStatus.COMPLETED,
+        dimension=provider.embedding_dimension,
+        status=DocumentStatus.EMBEDDING,
     )

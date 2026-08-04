@@ -5,7 +5,8 @@ The generation service depends only on these abstractions rather than
 concrete retrieval or prompt-building implementations.
 """
 
-from typing import Protocol, Sequence
+from collections.abc import Sequence
+from typing import Protocol
 
 from ..retrieval import SearchResult
 from .models import ChatMessage

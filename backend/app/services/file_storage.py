@@ -8,11 +8,12 @@ from ..core import EmptyFileError, FileTooLargeError
 CHUNK_SIZE = 1024 * 1024  # 1 MiB
 
 
-async def save_local_file(
+async def save_uploaded_file(
     file: UploadFile,
     destination: Path,
     max_size_bytes: int,
 ) -> int:
+    """Save an uploaded file to disk in chunks to optimize memory."""
     size_bytes = 0
     try:
         async with aiofiles.open(destination, "wb") as buffer:
@@ -21,6 +22,7 @@ async def save_local_file(
                 if size_bytes > max_size_bytes:
                     raise FileTooLargeError(max_size_bytes)
                 await buffer.write(chunk)
+
         if size_bytes == 0:
             raise EmptyFileError("Empty files are not allowed.")
         return size_bytes

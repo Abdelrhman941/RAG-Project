@@ -2,12 +2,11 @@ from typing import Annotated
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
 
-from ..core import ChunkingStrategy
+from ..core import ChunkingStrategy, DocumentStatus
 
 
 class Chunk(BaseModel):
     model_config = ConfigDict(frozen=True)
-
     chunk_id: UUID4
     document_id: UUID4
     chunk_index: Annotated[int, Field(ge=0)]
@@ -29,7 +28,7 @@ class Chunk(BaseModel):
 class ChunkRequest(BaseModel):
     """Optional chunking overrides. Omitted fields fall back to server defaults."""
 
-    strategy: ChunkingStrategy = ChunkingStrategy.CHARACTER
+    strategy: ChunkingStrategy = ChunkingStrategy.TOKEN
     chunk_size: int | None = Field(default=None, gt=0)
     overlap: int | None = Field(default=None, ge=0)
 
@@ -46,7 +45,7 @@ class ChunkRequest(BaseModel):
 
 class ChunkResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
-
     document_id: UUID4
+    status: DocumentStatus
     total_chunks: int
     chunks: list[Chunk]

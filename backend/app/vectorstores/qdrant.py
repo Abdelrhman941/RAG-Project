@@ -15,8 +15,8 @@ from ..core import (
     VectorStoreUnavailableError,
 )
 from ..retrieval import SearchResult
-from ..schemas import PointData
 from .base import BaseVectorStore
+from .models import PointData
 
 logger = logging.getLogger(__name__)
 

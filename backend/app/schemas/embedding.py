@@ -1,15 +1,13 @@
 from typing import Annotated
-from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import UUID4, BaseModel, ConfigDict, Field
 
 from ..core import DocumentStatus
 
 
 class EmbeddingResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
-
-    document_id: UUID
+    document_id: UUID4
     total_chunks: Annotated[int, Field(ge=0)]
     embedding_model: str
     dimension: Annotated[int, Field(gt=0)]

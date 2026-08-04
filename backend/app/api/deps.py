@@ -11,31 +11,8 @@ from ..services import GenerationService, RetrievalServiceAdapter
 from ..vectorstores import BaseVectorStore, get_vector_store
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
-
-
-def get_current_embedding_provider(
-    settings: SettingsDep,
-) -> BaseEmbeddingProvider:
-    return get_embedding_provider(settings.EMBEDDING_PROVIDER, settings.EMBEDDING_MODEL)
-
-
-EmbeddingProviderDep = Annotated[
-    BaseEmbeddingProvider, Depends(get_current_embedding_provider)
-]
-
-
-def get_current_vector_store(settings: SettingsDep) -> BaseVectorStore:
-    return get_vector_store(
-        provider=settings.VECTOR_STORE_PROVIDER,
-        host=settings.QDRANT_HOST,
-        port=settings.QDRANT_PORT,
-        grpc_port=settings.QDRANT_GRPC_PORT,
-        prefer_grpc=settings.QDRANT_PREFER_GRPC,
-        api_key=settings.QDRANT_API_KEY,
-    )
-
-
-VectorStoreDep = Annotated[BaseVectorStore, Depends(get_current_vector_store)]
+EmbeddingProviderDep = Annotated[BaseEmbeddingProvider, Depends(get_embedding_provider)]
+VectorStoreDep = Annotated[BaseVectorStore, Depends(get_vector_store)]
 
 
 # ---------------------------------------------------------------------------
@@ -48,8 +25,6 @@ def get_prompt_builder() -> PromptBuilder:
 
 
 PromptBuilderDep = Annotated[PromptBuilder, Depends(get_prompt_builder)]
-
-# `get_llm_provider` is already `lru_cache`d inside `llms/factory.py`
 LLMProviderDep = Annotated[BaseLLMProvider, Depends(get_llm_provider)]
 
 

@@ -9,7 +9,9 @@ from .base import BaseParser
 class TxtParser(BaseParser):
     """Parse plain text files with UTF-8 first, then encoding detection."""
 
-    def parse(self, path: Path) -> list[str]:
+    @staticmethod
+    def _read_text(path: Path) -> str:
+        """Read a text file and normalize line endings."""
         try:
             try:
                 text = path.read_text(encoding="utf-8")
@@ -24,4 +26,7 @@ class TxtParser(BaseParser):
         except OSError as exc:
             raise ParsingError(f"Could not read text file '{path.name}'.") from exc
 
-        return [text.replace("\r\n", "\n").replace("\r", "\n")]
+        return text.replace("\r\n", "\n").replace("\r", "\n")
+
+    def parse(self, path: Path) -> list[str]:
+        return [self._read_text(path)]

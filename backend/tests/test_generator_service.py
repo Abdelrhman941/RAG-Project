@@ -16,7 +16,7 @@ import pytest
 
 from app.core.exceptions import LLMProviderError
 from app.generation.models import GenerationResult
-from app.services.generator import GenerationService
+from backend.app.services.generation_service import GenerationService
 
 DOC_A_ID = UUID("11111111-1111-4111-8111-111111111111")
 DOC_B_ID = UUID("22222222-2222-4222-8222-222222222222")

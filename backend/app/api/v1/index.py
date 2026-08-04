@@ -29,7 +29,7 @@ async def index_uploaded_document(
         vector_store=vector_store,
         collection_name=settings.QDRANT_COLLECTION,
         distance=settings.DISTANCE_METRIC,
-        strategy=ChunkingStrategy.CHARACTER,
+        strategy=ChunkingStrategy.TOKEN,
         chunk_size=settings.DEFAULT_CHUNK_SIZE,
         overlap=settings.DEFAULT_CHUNK_OVERLAP,
     )
