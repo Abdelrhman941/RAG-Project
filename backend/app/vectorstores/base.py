@@ -48,6 +48,20 @@ class BaseVectorStore(ABC):
         """Delete all vectors associated with a specific document ID.
         Crucial for re-indexing files without leaving duplicate old chunks behind."""
 
+    @abstractmethod
+    async def get_existing_hashes(
+        self,
+        collection_name: str,
+        hashes: frozenset[str],
+    ) -> frozenset[str]:
+        """Return the subset of *hashes* already present in the collection.
+
+        Used by the indexer to skip embedding and upserting chunks whose
+        content has already been indexed. Implementations must query only
+        the ``content_hash`` payload field and must not return vendor types.
+        Returns an empty frozenset if the collection does not yet exist.
+        """
+
     # ---- Retrieval ----
     @abstractmethod
     async def search(

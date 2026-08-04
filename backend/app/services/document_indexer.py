@@ -38,6 +38,7 @@ def _build_points(
                 start_char=chunk.start_char,
                 end_char=chunk.end_char,
                 source_type=chunk.source_type,
+                content_hash=chunk.content_hash,
             ),
         )
         for chunk, vector in zip(chunks, vectors, strict=True)
@@ -72,8 +73,19 @@ async def index_document(
     if not chunks:
         raise IndexingError(f"Document '{document_id}' produced no chunks to index.")
 
-    vectors = await embed_chunks(chunks, provider)
-    points = _build_points(chunks, vectors)
+    # --- Cross-document exact duplicate prevention (content hash) ---
+    candidate_hashes = frozenset(c.content_hash for c in chunks)
+    existing_hashes = await vector_store.get_existing_hashes(
+        collection_name, candidate_hashes
+    )
+    new_chunks = [c for c in chunks if c.content_hash not in existing_hashes]
+
+    if new_chunks:
+        vectors = await embed_chunks(new_chunks, provider)
+        points = _build_points(new_chunks, vectors)
+    else:
+        vectors = []
+        points = []
     dimension = provider.embedding_dimension
 
     await vector_store.create_collection(

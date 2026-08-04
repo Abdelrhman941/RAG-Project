@@ -1,7 +1,9 @@
+import hashlib
 from pathlib import Path
 from uuid import UUID, uuid4
 
 from ..chunkers import ChunkingConfig, get_chunker
+from ..chunkers.dedup import is_duplicate
 from ..core import ChunkingStrategy
 from ..schemas import Chunk
 from .document_parser import parse_document
@@ -14,22 +16,27 @@ async def chunk_document(
     chunk_size: int,
     overlap: int,
 ) -> list[Chunk]:
-    """Parse a document then split it into ordered chunks."""
+    """Parse a document then split it into ordered, deduplicated chunks.
 
-    from ..core import SourceType, get_settings
+    Deduplication is intra-document only (string similarity via difflib).
+    Cross-corpus duplicate prevention is handled separately.
+    """
+
+    from ..core import get_settings
 
     settings = get_settings()
+
+    pages, source_type = await parse_document(
+        document_id=document_id,
+        upload_dir=upload_dir,
+    )
 
     config = ChunkingConfig(
         strategy=strategy,
         chunk_size=chunk_size,
         overlap=overlap,
         min_chunk_chars=settings.MIN_CHUNK_CHARS,
-        source_type=SourceType.TXT,  # Hardcoded temporarily until Task 6
-    )
-    pages = await parse_document(
-        document_id=document_id,
-        upload_dir=upload_dir,
+        source_type=source_type,
     )
     chunker = get_chunker(config.strategy)
     chunks: list[Chunk] = []
@@ -40,18 +47,23 @@ async def chunk_document(
             continue
 
         for span in chunker.chunk(page_text, config):
-            chunks.append(
-                Chunk(
-                    chunk_id=uuid4(),
-                    document_id=document_id,
-                    chunk_index=current_chunk_index,
-                    page_number=page_number,
-                    content=span.content,
-                    start_char=span.start_char,
-                    end_char=span.end_char,
-                    char_count=len(span.content),
-                    source_type=span.source_type,
-                )
+            candidate = Chunk(
+                chunk_id=uuid4(),
+                document_id=document_id,
+                chunk_index=current_chunk_index,
+                page_number=page_number,
+                content=span.content,
+                start_char=span.start_char,
+                end_char=span.end_char,
+                char_count=len(span.content),
+                source_type=span.source_type,
+                content_hash=hashlib.sha256(span.content.encode()).hexdigest(),
             )
+
+            if is_duplicate(candidate, chunks, settings.DEDUP_SIMILARITY_THRESHOLD):
+                continue  # drop intra-document duplicate
+
+            chunks.append(candidate)
             current_chunk_index += 1
+
     return chunks

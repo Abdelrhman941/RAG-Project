@@ -22,6 +22,7 @@ class PointPayload(BaseModel):
     source_type: SourceType
     start_char: Annotated[int, Field(ge=0)]
     end_char: Annotated[int, Field(ge=0)]
+    content_hash: str  # SHA-256 hex digest of chunk content
 
 
 class PointData(BaseModel):

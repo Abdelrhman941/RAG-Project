@@ -156,6 +156,56 @@ class QdrantVectorStore(BaseVectorStore):
                 f"Qdrant is unreachable while deleting document '{document_id}': {exc}"
             ) from exc
 
+    async def get_existing_hashes(
+        self,
+        collection_name: str,
+        hashes: frozenset[str],
+    ) -> frozenset[str]:
+        """Return the subset of *hashes* already present in the collection.
+
+        Uses a payload-filter scroll with ``MatchAny`` so only matching
+        points are fetched — network overhead stays proportional to the
+        number of candidate chunks, not the full collection size.
+        Returns an empty frozenset immediately when *hashes* is empty or
+        the collection does not yet exist.
+        """
+        if not hashes:
+            return frozenset()
+        try:
+            exists = await self._client.collection_exists(collection_name)
+        except (ResponseHandlingException, UnexpectedResponse) as exc:
+            raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
+        if not exists:
+            return frozenset()
+
+        try:
+            points, _ = await self._client.scroll(
+                collection_name=collection_name,
+                scroll_filter=qmodels.Filter(
+                    must=[
+                        qmodels.FieldCondition(
+                            key="content_hash",
+                            match=qmodels.MatchAny(any=list(hashes)),
+                        )
+                    ]
+                ),
+                with_payload=True,
+                with_vectors=False,
+                limit=len(hashes),
+            )
+        except (ResponseHandlingException, UnexpectedResponse) as exc:
+            raise VectorStoreUnavailableError(
+                f"Qdrant hash lookup failed: {exc}"
+            ) from exc
+
+        found: set[str] = set()
+        for point in points:
+            if point.payload and "content_hash" in point.payload:
+                h = str(point.payload["content_hash"])
+                if h in hashes:
+                    found.add(h)
+        return frozenset(found)
+
     # ---- Retrieval ----
     async def search(
         self,

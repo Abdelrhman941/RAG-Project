@@ -16,6 +16,7 @@ class Chunk(BaseModel):
     end_char: Annotated[int, Field(ge=0)]
     char_count: Annotated[int, Field(ge=0)]
     source_type: SourceType
+    content_hash: str  # SHA-256 hex digest of chunk content
 
     @model_validator(mode="after")
     def validate_span_consistency(self) -> "Chunk":

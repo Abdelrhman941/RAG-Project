@@ -6,6 +6,7 @@ from anyio import to_thread
 from ..core import (
     DocumentExtension,
     DocumentNotFoundError,
+    SourceType,
     UnsupportedDocumentTypeError,
 )
 from ..parsers import get_parser
@@ -23,8 +24,10 @@ def find_document_path(
     return match
 
 
-async def parse_document(document_id: UUID, upload_dir: Path) -> list[str]:
-    """Parse a stored document into a list of page texts."""
+async def parse_document(
+    document_id: UUID, upload_dir: Path
+) -> tuple[list[str], SourceType]:
+    """Parse a stored document into a list of page texts and its SourceType."""
 
     path = find_document_path(
         document_id=document_id,
@@ -34,5 +37,9 @@ async def parse_document(document_id: UUID, upload_dir: Path) -> list[str]:
         extension = DocumentExtension(path.suffix.lower())
     except ValueError:
         raise UnsupportedDocumentTypeError(path.suffix) from None
+        
     parser = get_parser(extension)
-    return await to_thread.run_sync(parser.parse, path)
+    pages = await to_thread.run_sync(parser.parse, path)
+    source_type = SourceType(extension.value.lstrip("."))
+    
+    return pages, source_type

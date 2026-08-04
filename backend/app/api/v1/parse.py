@@ -22,7 +22,7 @@ async def parse_uploaded_document(
     document_id: UUID,
     settings: SettingsDep,
 ) -> ParsedDocument:
-    pages = await parse_document(document_id, settings.UPLOAD_DIR)
+    pages, _ = await parse_document(document_id, settings.UPLOAD_DIR)
     return ParsedDocument(
         document_id=document_id,
         status=DocumentStatus.PARSING,

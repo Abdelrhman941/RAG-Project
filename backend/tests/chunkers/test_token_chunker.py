@@ -5,7 +5,9 @@ from app.core import ChunkingStrategy, SourceType
 PDF = SourceType.PDF
 
 
-def _cfg(chunk_size=100, overlap=10, min_chunk_chars=20):
+def _cfg(
+    chunk_size: int = 100, overlap: int = 10, min_chunk_chars: int = 20
+) -> ChunkingConfig:
     return ChunkingConfig(
         strategy=ChunkingStrategy.TOKEN,
         chunk_size=chunk_size,

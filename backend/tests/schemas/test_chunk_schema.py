@@ -1,7 +1,9 @@
+import hashlib
 from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
+
 from app.core import SourceType
 from app.schemas.chunk import Chunk
 
@@ -17,6 +19,7 @@ def test_chunk_accepts_source_type() -> None:
         end_char=11,
         char_count=11,
         source_type=SourceType.TXT,
+        content_hash=hashlib.sha256("Hello world".encode()).hexdigest(),
     )
     assert chunk.source_type == SourceType.TXT
 
