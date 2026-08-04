@@ -56,10 +56,10 @@
 * [ ] Add a guardrail for maximum chunk size before embedding.
 * [x] Separate storage chunk size from LLM prompt chunk size when needed.
 * [x] Add parent or section references for each chunk.
-* [ ] Support small-to-big retrieval:
+* [x] Support small-to-big retrieval:
 
-  * [ ] small chunk for matching
-  * [ ] larger parent section for prompt context
+  * [x] small chunk for matching
+  * [x] larger parent section for prompt context
 * [ ] Measure the effect of micro-chunks on ranking quality.
 
 ---

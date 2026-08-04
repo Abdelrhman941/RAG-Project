@@ -14,3 +14,5 @@ class SearchResult(BaseModel):
     page_number: Annotated[int, Field(ge=1)]
     score: Annotated[float, Field(ge=0.0, le=1.0)]
     content: str
+    parent_chunk_id: UUID4 | None = None
+    parent_content: str | None = None

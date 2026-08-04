@@ -1,6 +1,7 @@
 import tomllib
 from functools import cache
 from pathlib import Path
+from typing import cast
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,9 +16,6 @@ from .enums import (
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _BYTES_PER_MB = 1024 * 1024
-
-
-from typing import cast
 
 
 @cache

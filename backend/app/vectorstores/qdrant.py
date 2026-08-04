@@ -257,6 +257,12 @@ class QdrantVectorStore(BaseVectorStore):
                 page_number=int(payload["page_number"]),
                 score=float(point.score),
                 content=str(payload["content"]),
+                parent_chunk_id=UUID(str(payload["parent_chunk_id"]))
+                if payload.get("parent_chunk_id")
+                else None,
+                parent_content=str(payload["parent_content"])
+                if payload.get("parent_content")
+                else None,
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise RetrievalError(
