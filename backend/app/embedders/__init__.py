@@ -4,7 +4,7 @@ from .base import (
     BaseSparseEmbeddingProvider,
 )
 from .cross_encoder import CrossEncoderReranker
-from .factory import get_embedding_provider, get_reranker
+from .factory import get_embedding_provider, get_reranker, get_sparse_provider
 from .sentence_transformer import SentenceTransformerProvider
 
 __all__ = [
@@ -15,4 +15,5 @@ __all__ = [
     "SentenceTransformerProvider",
     "get_embedding_provider",
     "get_reranker",
+    "get_sparse_provider",
 ]

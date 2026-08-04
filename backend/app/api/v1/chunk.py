@@ -31,6 +31,16 @@ async def chunk_uploaded_document(
         if chunk_request.embedding_overlap is not None
         else settings.DEFAULT_EMBEDDING_OVERLAP
     )
+    prompt_chunk_size = (
+        chunk_request.prompt_chunk_size
+        if chunk_request.prompt_chunk_size is not None
+        else settings.DEFAULT_PROMPT_CHUNK_SIZE
+    )
+    prompt_overlap = (
+        chunk_request.prompt_overlap
+        if chunk_request.prompt_overlap is not None
+        else settings.DEFAULT_PROMPT_OVERLAP
+    )
 
     chunks = await chunk_document(
         document_id=document_id,
@@ -38,6 +48,8 @@ async def chunk_uploaded_document(
         strategy=chunk_request.strategy,
         embedding_chunk_size=embedding_chunk_size,
         embedding_overlap=embedding_overlap,
+        prompt_chunk_size=prompt_chunk_size,
+        prompt_overlap=prompt_overlap,
     )
 
     return ChunkResponse(

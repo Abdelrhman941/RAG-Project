@@ -5,7 +5,7 @@ from fastapi import APIRouter, status
 from ...core import ChunkingStrategy
 from ...schemas import IndexingResponse
 from ...services import index_document
-from ..deps import EmbeddingProviderDep, SettingsDep, VectorStoreDep
+from ..deps import EmbeddingProviderDep, SettingsDep, VectorStoreDep, SparseProviderDep
 
 index_router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -20,6 +20,7 @@ async def index_uploaded_document(
     settings: SettingsDep,
     provider: EmbeddingProviderDep,
     vector_store: VectorStoreDep,
+    sparse_provider: SparseProviderDep,
 ) -> IndexingResponse:
     """Parse -> Chunk -> Embed -> Upsert into the configured vector store."""
     return await index_document(
@@ -32,4 +33,7 @@ async def index_uploaded_document(
         strategy=ChunkingStrategy.TOKEN,
         embedding_chunk_size=settings.DEFAULT_EMBEDDING_CHUNK_SIZE,
         embedding_overlap=settings.DEFAULT_EMBEDDING_OVERLAP,
+        prompt_chunk_size=settings.DEFAULT_PROMPT_CHUNK_SIZE,
+        prompt_overlap=settings.DEFAULT_PROMPT_OVERLAP,
+        sparse_provider=sparse_provider,
     )

@@ -7,8 +7,10 @@ from ..core import Settings, get_settings
 from ..embedders import (
     BaseEmbeddingProvider,
     BaseRerankerProvider,
+    BaseSparseEmbeddingProvider,
     get_embedding_provider,
     get_reranker,
+    get_sparse_provider,
 )
 from ..generation import PromptBuilder, PromptBuilderPort, RetrievalServicePort
 from ..llms import BaseLLMProvider, get_llm_provider
@@ -18,6 +20,7 @@ from ..vectorstores import BaseVectorStore, get_vector_store
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 EmbeddingProviderDep = Annotated[BaseEmbeddingProvider, Depends(get_embedding_provider)]
 RerankerDep = Annotated[BaseRerankerProvider | None, Depends(get_reranker)]
+SparseProviderDep = Annotated[BaseSparseEmbeddingProvider | None, Depends(get_sparse_provider)]
 VectorStoreDep = Annotated[BaseVectorStore, Depends(get_vector_store)]
 
 
@@ -39,6 +42,7 @@ def get_retrieval_service(
     provider: EmbeddingProviderDep,
     vector_store: VectorStoreDep,
     reranker: RerankerDep,
+    sparse_provider: SparseProviderDep,
 ) -> RetrievalServiceAdapter:
     """Binds retrieval's collaborators once, exposing only
     `retrieve(query, top_k)` to the generation layer — see
@@ -52,6 +56,7 @@ def get_retrieval_service(
         fetch_k=settings.RETRIEVAL_FETCH_K,
         rerank_min_score=settings.RERANK_MIN_SCORE,
         reranker=reranker,
+        sparse_provider=sparse_provider,
     )
 
 

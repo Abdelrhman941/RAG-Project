@@ -1,5 +1,5 @@
-import math
 from collections.abc import Sequence
+from typing import cast
 
 from .base import BaseRerankerProvider
 
@@ -11,6 +11,7 @@ class CrossEncoderReranker(BaseRerankerProvider):
         self, model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     ) -> None:
         try:
+            import torch
             from sentence_transformers import CrossEncoder
         except ImportError as exc:
             raise ImportError(
@@ -19,7 +20,9 @@ class CrossEncoderReranker(BaseRerankerProvider):
             ) from exc
 
         self._model_name = model_name
-        self._model = CrossEncoder(model_name)
+        self._model = CrossEncoder(
+            model_name, default_activation_function=torch.nn.Sigmoid()
+        )
 
     @property
     def model_name(self) -> str:
@@ -30,13 +33,9 @@ class CrossEncoderReranker(BaseRerankerProvider):
             return []
 
         pairs = [(query, text) for text in texts]
-        scores = self._model.predict(pairs)
 
-        # Convert to list if it's a numpy array, handle single scalar
-        if hasattr(scores, "tolist"):
-            scores = scores.tolist()
-        if not isinstance(scores, list):
-            scores = [scores]
+        # Batch predict gives us the bounded scores directly
+        # because we set default_activation_function=torch.nn.Sigmoid()
+        raw_scores = self._model.predict(pairs)
 
-        # Apply sigmoid to bound scores to [0, 1] since CrossEncoders output raw logits
-        return [1.0 / (1.0 + math.exp(-score)) for score in scores]
+        return cast(list[float], raw_scores.tolist())

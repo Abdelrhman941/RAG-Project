@@ -6,8 +6,9 @@ from ..core import (
     UnsupportedEmbeddingProviderError,
     get_settings,
 )
-from .base import BaseEmbeddingProvider, BaseRerankerProvider
+from .base import BaseEmbeddingProvider, BaseRerankerProvider, BaseSparseEmbeddingProvider
 from .cross_encoder import CrossEncoderReranker
+from .fastembed_sparse import FastEmbedSparseProvider
 from .sentence_transformer import SentenceTransformerProvider
 
 
@@ -44,3 +45,16 @@ def create_reranker(
 def get_reranker() -> BaseRerankerProvider | None:
     """Return the application-wide reranker singleton."""
     return create_reranker(get_settings())
+
+def create_sparse_provider(
+    settings: Settings,
+) -> BaseSparseEmbeddingProvider | None:
+    """Create a sparse provider from application settings if configured."""
+    if settings.SPARSE_EMBEDDING_MODEL_NAME:
+        return FastEmbedSparseProvider(model_name=settings.SPARSE_EMBEDDING_MODEL_NAME)
+    return None
+
+@lru_cache
+def get_sparse_provider() -> BaseSparseEmbeddingProvider | None:
+    """Return the application-wide sparse provider singleton."""
+    return create_sparse_provider(get_settings())

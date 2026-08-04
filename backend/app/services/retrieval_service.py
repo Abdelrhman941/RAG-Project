@@ -39,7 +39,7 @@ def _deduplicate_parents(results: list[SearchResult]) -> list[SearchResult]:
                 SearchResult(
                     document_id=result.document_id,
                     chunk_id=result.parent_chunk_id,
-                    chunk_index=result.chunk_index,
+                    chunk_index=0,  # Placeholder for reconstructed parent
                     page_number=result.page_number,
                     score=result.score,
                     content=result.parent_content,  # type: ignore[arg-type]
