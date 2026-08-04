@@ -72,9 +72,12 @@ async def chunk_document(
             )
 
             if is_duplicate(candidate, history, settings.DEDUP_SIMILARITY_THRESHOLD):
-                continue  # drop intra-document duplicate
+                continue
 
             history.append(candidate)
+            if len(history) > 20:
+                history.pop(0)
+
             yield candidate
             current_chunk_index += 1
 

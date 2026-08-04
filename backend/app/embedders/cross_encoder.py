@@ -11,7 +11,6 @@ class CrossEncoderReranker(BaseRerankerProvider):
         self, model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     ) -> None:
         try:
-            import torch
             from sentence_transformers import CrossEncoder
         except ImportError as exc:
             raise ImportError(

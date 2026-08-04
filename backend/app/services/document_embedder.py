@@ -59,12 +59,26 @@ async def embed_document(
         prompt_chunk_size=prompt_chunk_size,
         prompt_overlap=prompt_overlap,
     )
-    chunks = [c async for c in chunks_gen]
+    from ..core.config import get_settings
+    batch_size = get_settings().EMBEDDING_BATCH_SIZE
 
-    await embed_chunks(chunks, provider)
+    total_chunks = 0
+    while True:
+        batch = []
+        try:
+            for _ in range(batch_size):
+                batch.append(await anext(chunks_gen))
+        except StopAsyncIteration:
+            pass
+        
+        if not batch:
+            break
+            
+        await embed_chunks(batch, provider)
+        total_chunks += len(batch)
     return EmbeddingResponse(
         document_id=document_id,
-        total_chunks=len(chunks),
+        total_chunks=total_chunks,
         embedding_model=provider.model_name,
         dimension=provider.embedding_dimension,
         status=DocumentStatus.EMBEDDING,

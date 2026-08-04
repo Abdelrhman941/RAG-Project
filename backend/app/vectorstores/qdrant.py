@@ -102,6 +102,12 @@ class QdrantVectorStore(BaseVectorStore):
         except (ResponseHandlingException, UnexpectedResponse) as exc:
             raise VectorStoreUnavailableError(f"Qdrant is unreachable: {exc}") from exc
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def delete_collection(self, collection_name: str) -> None:
         try:
             await self._client.delete_collection(collection_name=collection_name)
@@ -170,6 +176,12 @@ class QdrantVectorStore(BaseVectorStore):
             raise IndexingError(f"Failed to upsert points: {exc}") from exc
         return len(structs)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def delete_by_document(
         self,
         collection_name: str,
@@ -202,6 +214,12 @@ class QdrantVectorStore(BaseVectorStore):
                 f"Qdrant is unreachable while deleting document '{document_id}': {exc}"
             ) from exc
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def get_existing_hashes(
         self,
         collection_name: str,
