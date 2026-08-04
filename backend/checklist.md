@@ -95,25 +95,25 @@
 
 * [x] Batch embeddings instead of embedding one chunk at a time when possible.
 * [x] Reduce unnecessary round trips to the vector store.
-* [x] Cache embeddings only if the cache design is explicit and safe.
-* [x] Cache retrieval results only if the query pattern justifies it.
+* [ ] Cache embeddings only if the cache design is explicit and safe.
+* [ ] Cache retrieval results only if the query pattern justifies it.
 * [x] Use async execution where it materially improves throughput.
 * [x] Avoid recreating splitters or helpers inside tight loops.
-* [x] Benchmark every major change before and after.
-* [x] Keep a stable benchmark corpus for regression testing.
+* [ ] Benchmark every major change before and after.
+* [ ] Keep a stable benchmark corpus for regression testing.
 
 ---
 
 ## P6 — Reliability and quality gates
 
-* [x] Create golden samples for PDF, Markdown, and TXT ingestion.
+* [ ] Create golden samples for PDF, Markdown, and TXT ingestion.
 * [x] Add checks for chunk count, average chunk size, and duplicate ratio.
 * [x] Add checks for empty chunks or tiny chunks.
-* [x] Add checks for text loss during parsing.
+* [ ] Add checks for text loss during parsing.
 * [x] Add checks that the embedder input stays within limits.
-* [x] Add checks for citation mapping correctness.
-* [x] Verify grounded answers in `/chat`.
-* [x] Reduce hallucination risk through retrieval constraints and prompt rules.
+* [ ] Add checks for citation mapping correctness.
+* [ ] Verify grounded answers in `/chat`.
+* [ ] Reduce hallucination risk through retrieval constraints and prompt rules.
 * [x] Add regression tests for every fixed bug.
 
 ---
