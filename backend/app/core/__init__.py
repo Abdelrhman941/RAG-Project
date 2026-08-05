@@ -33,10 +33,12 @@ from .exceptions import (
     VectorStoreError,
     VectorStoreUnavailableError,
 )
+from .logger import setup_logging
 
 __all__ = [
     "Settings",
     "get_settings",
+    "setup_logging",
     "ChunkingStrategy",
     "DistanceMetric",
     "DocumentExtension",

@@ -1,46 +1,47 @@
-from collections.abc import AsyncIterator
-from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
 
 from app.core import ChunkingStrategy, SourceType
-from app.services.document_chunker import chunk_document
+from app.services.document_chunker import DocumentChunkerService
+from app.services.document_parser import DocumentParserService
 
 
 @pytest.mark.asyncio
 async def test_chunk_document_propagates_source_type() -> None:
     doc_id = uuid4()
-    with patch(
-        "app.services.document_chunker.parse_document", new_callable=AsyncMock
-    ) as mock_parse:
 
-        async def mock_parse_gen() -> AsyncIterator[str]:
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def mock_parse_cm(*args, **kwargs):
+        async def mock_parse_gen():
             for page in ["This is page one."]:
                 yield page
 
-        mock_parse.return_value = (mock_parse_gen(), SourceType.TXT)
+        yield (mock_parse_gen(), SourceType.TXT)
 
-        # We also need to patch ChunkingConfig to ensure the
-        # source_type we pass is predictable or we can just
-        # let it use the current hardcoded SourceType.TXT from Step 4 fix
-        chunks = [
-            c
-            async for c in chunk_document(
-                document_id=doc_id,
-                upload_dir=Path("/tmp"),
-                strategy=ChunkingStrategy.TOKEN,
-                embedding_chunk_size=10,
-                embedding_overlap=0,
-            )
-        ]
+    mock_parser = MagicMock(spec=DocumentParserService)
+    mock_parser.parse_document = mock_parse_cm
 
-        assert len(chunks) > 0
-        for chunk in chunks:
-            assert chunk.source_type == SourceType.TXT
-            assert hasattr(chunk, "start_char")
-            assert hasattr(chunk, "end_char")
+    chunker = DocumentChunkerService(parser=mock_parser, min_chunk_chars=10)
+
+    chunks = [
+        c
+        async for c in chunker.chunk_document(
+            document_id=doc_id,
+            strategy=ChunkingStrategy.TOKEN,
+            embedding_chunk_size=10,
+            embedding_overlap=0,
+        )
+    ]
+
+    assert len(chunks) > 0
+    for chunk in chunks:
+        assert chunk.source_type == SourceType.TXT
+        assert hasattr(chunk, "start_char")
+        assert hasattr(chunk, "end_char")
 
 
 @pytest.mark.asyncio
@@ -56,26 +57,33 @@ async def test_chunk_document_dedup_and_contiguous_index() -> None:
         "Unique content on page three here.",
         "Boilerplate footer.",
     ]
-    with patch(
-        "app.services.document_chunker.parse_document", new_callable=AsyncMock
-    ) as mock_parse:
 
-        async def mock_parse_gen() -> AsyncIterator[str]:
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def mock_parse_cm(*args, **kwargs):
+        async def mock_parse_gen():
             for page in pages:
                 yield page
 
-        mock_parse.return_value = (mock_parse_gen(), SourceType.TXT)
+        yield (mock_parse_gen(), SourceType.TXT)
 
-        chunks = [
-            c
-            async for c in chunk_document(
-                document_id=doc_id,
-                upload_dir=Path("/tmp"),
-                strategy=ChunkingStrategy.TOKEN,
-                embedding_chunk_size=200,
-                embedding_overlap=0,
-            )
-        ]
+    mock_parser = MagicMock(spec=DocumentParserService)
+    mock_parser.parse_document = mock_parse_cm
+
+    chunker = DocumentChunkerService(
+        parser=mock_parser, min_chunk_chars=10, dedup_similarity_threshold=1.0
+    )
+
+    chunks = [
+        c
+        async for c in chunker.chunk_document(
+            document_id=doc_id,
+            strategy=ChunkingStrategy.TOKEN,
+            embedding_chunk_size=200,
+            embedding_overlap=0,
+        )
+    ]
 
     # The second identical footer should be dropped.
     assert len(chunks) == 3

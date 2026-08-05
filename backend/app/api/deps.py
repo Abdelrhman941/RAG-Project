@@ -12,9 +12,17 @@ from ..embedders import (
     get_reranker,
     get_sparse_provider,
 )
-from ..generation import PromptBuilder, PromptBuilderPort, RetrievalServicePort
+from ..generation import PromptBuilder, PromptBuilderPort
 from ..llms import BaseLLMProvider, get_llm_provider
-from ..services import GenerationService, RetrievalServiceAdapter
+from ..services import (
+    DocumentChunkerService,
+    DocumentEmbedderService,
+    DocumentIndexerService,
+    DocumentParserService,
+    FileStorageService,
+    GenerationService,
+    RetrievalServiceAdapter,
+)
 from ..vectorstores import BaseVectorStore, get_vector_store
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -72,7 +80,7 @@ def get_generation_service(
     llm_provider: LLMProviderDep,
 ) -> GenerationService:
     return GenerationService(
-        retrieval_service=cast(RetrievalServicePort, retrieval_service),
+        retrieval_service=retrieval_service,
         prompt_builder=cast(PromptBuilderPort, prompt_builder),
         llm_provider=llm_provider,
         top_k=settings.DEFAULT_TOP_K,
@@ -80,3 +88,73 @@ def get_generation_service(
 
 
 GenerationServiceDep = Annotated[GenerationService, Depends(get_generation_service)]
+
+# ---------------------------------------------------------------------------
+# /ingestion dependencies
+# ---------------------------------------------------------------------------
+
+
+def get_file_storage_service(settings: SettingsDep) -> FileStorageService:
+    return FileStorageService(max_size_bytes=settings.MAX_FILE_SIZE_BYTES)
+
+
+FileStorageServiceDep = Annotated[FileStorageService, Depends(get_file_storage_service)]
+
+
+def get_document_parser_service(settings: SettingsDep) -> DocumentParserService:
+    return DocumentParserService(upload_dir=settings.UPLOAD_DIR)
+
+
+DocumentParserServiceDep = Annotated[
+    DocumentParserService, Depends(get_document_parser_service)
+]
+
+
+def get_document_chunker_service(
+    settings: SettingsDep,
+    parser: DocumentParserServiceDep,
+) -> DocumentChunkerService:
+    return DocumentChunkerService(
+        parser=parser,
+        min_chunk_chars=settings.MIN_CHUNK_CHARS,
+        dedup_similarity_threshold=settings.DEDUP_SIMILARITY_THRESHOLD,
+    )
+
+
+DocumentChunkerServiceDep = Annotated[
+    DocumentChunkerService, Depends(get_document_chunker_service)
+]
+
+
+def get_document_embedder_service(
+    provider: EmbeddingProviderDep,
+) -> DocumentEmbedderService:
+    return DocumentEmbedderService(provider=provider)
+
+
+DocumentEmbedderServiceDep = Annotated[
+    DocumentEmbedderService, Depends(get_document_embedder_service)
+]
+
+
+def get_document_indexer_service(
+    settings: SettingsDep,
+    chunker: DocumentChunkerServiceDep,
+    embedder: DocumentEmbedderServiceDep,
+    provider: EmbeddingProviderDep,
+    vector_store: VectorStoreDep,
+    sparse_provider: SparseProviderDep,
+) -> DocumentIndexerService:
+    return DocumentIndexerService(
+        chunker=chunker,
+        embedder=embedder,
+        provider=provider,
+        vector_store=vector_store,
+        sparse_provider=sparse_provider,
+        ingestion_batch_size=settings.INGESTION_BATCH_SIZE,
+    )
+
+
+DocumentIndexerServiceDep = Annotated[
+    DocumentIndexerService, Depends(get_document_indexer_service)
+]

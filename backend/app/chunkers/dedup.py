@@ -45,7 +45,6 @@ def is_duplicate(
         max_possible = (2.0 * min(l1, l2) / total) if total else 1.0
         if max_possible < threshold:
             continue
-
         matcher = difflib.SequenceMatcher(None, new_chunk.content, past.content)
 
         # real_quick_ratio and quick_ratio are fast upper-bound estimates.

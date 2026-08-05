@@ -12,9 +12,9 @@
 ## P0 — Baseline and safety
 
 * [x] Preserve the current endpoint contracts before refactoring.
-* [x] Record baseline outputs for each endpoint on a fixed sample corpus.
-* [x] Measure current latency for parse, chunk, embed, index, retrieve, and chat.
-* [x] Log chunk counts, chunk sizes, and retrieval result counts.
+* [ ] Record baseline outputs for each endpoint on a fixed sample corpus.
+* [ ] Measure current latency for parse, chunk, embed, index, retrieve, and chat.
+* [ ] Log chunk counts, chunk sizes, and retrieval result counts.
 * [x] Make sure test fixtures and imports do not depend on pre-refactor names.
 * [x] Keep the data flow explicit for each document lifecycle stage.
 
@@ -52,7 +52,7 @@
 
 * [x] Make chunking operate on normalized text, not file shape alone.
 * [x] Use one consistent chunking policy for all text-based inputs.
-* [x] Tune `chunk_size` and `overlap` using a real corpus, not guesses.
+* [ ] Tune `chunk_size` and `overlap` using a real corpus, not guesses.
 * [x] Add a guardrail for maximum chunk size before embedding.
 * [x] Separate storage chunk size from LLM prompt chunk size when needed.
 * [x] Add parent or section references for each chunk.
@@ -107,14 +107,14 @@
 ## P6 — Reliability and quality gates
 
 * [ ] Create golden samples for PDF, Markdown, and TXT ingestion.
-* [x] Add checks for chunk count, average chunk size, and duplicate ratio.
+* [ ] Add checks for chunk count, average chunk size, and duplicate ratio.
 * [x] Add checks for empty chunks or tiny chunks.
 * [ ] Add checks for text loss during parsing.
 * [x] Add checks that the embedder input stays within limits.
 * [ ] Add checks for citation mapping correctness.
 * [ ] Verify grounded answers in `/chat`.
 * [ ] Reduce hallucination risk through retrieval constraints and prompt rules.
-* [x] Add regression tests for every fixed bug.
+* [ ] Add regression tests for every fixed bug.
 
 ---
 

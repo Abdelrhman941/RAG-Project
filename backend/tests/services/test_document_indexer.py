@@ -1,14 +1,16 @@
 import hashlib
 from collections.abc import AsyncIterator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
 
 from app.core import ChunkingStrategy, DistanceMetric, SourceType
 from app.schemas import Chunk
-from app.services.document_indexer import _build_points, index_document
+from app.services.document_chunker import DocumentChunkerService
+from app.services.document_embedder import DocumentEmbedderService
+from app.services.document_indexer import DocumentIndexerService, _build_points
 
 
 def _sha256(text: str) -> str:
@@ -37,6 +39,30 @@ def test_build_points_propagates_content_hash() -> None:
     assert points[0].payload.content_hash == chunk.content_hash
 
 
+def _make_indexer(
+    chunks: list[Chunk],
+    mock_store: AsyncMock,
+    mock_provider: MagicMock,
+    sparse_provider: Any = None,
+) -> DocumentIndexerService:
+    async def mock_chunk_gen(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
+        for c in chunks:
+            yield c
+
+    mock_chunker = MagicMock(spec=DocumentChunkerService)
+    mock_chunker.chunk_document = mock_chunk_gen
+
+    mock_embedder = MagicMock(spec=DocumentEmbedderService)
+
+    return DocumentIndexerService(
+        chunker=mock_chunker,
+        embedder=mock_embedder,
+        provider=mock_provider,
+        vector_store=mock_store,
+        sparse_provider=sparse_provider,
+    )
+
+
 @pytest.mark.asyncio
 async def test_index_document_skips_already_indexed_chunks() -> None:
     """Chunks already in the store must not be embedded or upserted."""
@@ -58,32 +84,19 @@ async def test_index_document_skips_already_indexed_chunks() -> None:
     mock_provider.max_sequence_length = 512
 
     chunks = [_make_chunk(existing_text, 0), _make_chunk(new_text, 1)]
+    indexer = _make_indexer(chunks, mock_store, mock_provider)
 
-    async def mock_chunk_document(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
-        for c in chunks:
-            yield c
+    mock_embed = AsyncMock(return_value=[[0.1] * 3])
+    indexer._embedder.embed_chunks = mock_embed
 
-    with (
-        patch(
-            "app.services.document_indexer.chunk_document",
-            new=mock_chunk_document,
-        ),
-        patch(
-            "app.services.document_indexer.embed_chunks",
-            new=AsyncMock(return_value=[[0.1] * 3]),
-        ) as mock_embed,
-    ):
-        await index_document(
-            document_id=doc_id,
-            upload_dir=MagicMock(),
-            provider=mock_provider,
-            vector_store=mock_store,
-            collection_name="test",
-            distance=DistanceMetric.COSINE,
-            strategy=ChunkingStrategy.TOKEN,
-            embedding_chunk_size=200,
-            embedding_overlap=0,
-        )
+    await indexer.index_document(
+        document_id=doc_id,
+        collection_name="test",
+        distance=DistanceMetric.COSINE,
+        strategy=ChunkingStrategy.TOKEN,
+        embedding_chunk_size=200,
+        embedding_overlap=0,
+    )
 
     # embed_chunks called with only the 1 new chunk
     embedded_chunks = mock_embed.call_args[0][0]
@@ -113,31 +126,19 @@ async def test_index_document_all_chunks_new_embeds_all() -> None:
     mock_provider.model_name = "test-model"
     mock_provider.max_sequence_length = 512
 
-    async def mock_chunk_document(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
-        for c in chunks:
-            yield c
+    indexer = _make_indexer(chunks, mock_store, mock_provider)
 
-    with (
-        patch(
-            "app.services.document_indexer.chunk_document",
-            new=mock_chunk_document,
-        ),
-        patch(
-            "app.services.document_indexer.embed_chunks",
-            new=AsyncMock(return_value=[[0.1] * 3, [0.2] * 3]),
-        ) as mock_embed,
-    ):
-        response = await index_document(
-            document_id=doc_id,
-            upload_dir=MagicMock(),
-            provider=mock_provider,
-            vector_store=mock_store,
-            collection_name="test",
-            distance=DistanceMetric.COSINE,
-            strategy=ChunkingStrategy.TOKEN,
-            embedding_chunk_size=200,
-            embedding_overlap=0,
-        )
+    mock_embed = AsyncMock(return_value=[[0.1] * 3, [0.2] * 3])
+    indexer._embedder.embed_chunks = mock_embed
+
+    response = await indexer.index_document(
+        document_id=doc_id,
+        collection_name="test",
+        distance=DistanceMetric.COSINE,
+        strategy=ChunkingStrategy.TOKEN,
+        embedding_chunk_size=200,
+        embedding_overlap=0,
+    )
 
     assert len(mock_embed.call_args[0][0]) == 2
     assert response.total_chunks == 2
@@ -150,12 +151,18 @@ async def test_index_document_rejects_oversized_chunk() -> None:
     mock_provider = MagicMock()
     mock_provider.max_sequence_length = 512
 
-    with pytest.raises(IndexingError, match="exceeds model maximum context length"):
-        await index_document(
+    mock_chunker = MagicMock(spec=DocumentChunkerService)
+    mock_embedder = MagicMock(spec=DocumentEmbedderService)
+    indexer = DocumentIndexerService(
+        chunker=mock_chunker,
+        embedder=mock_embedder,
+        provider=mock_provider,
+        vector_store=MagicMock(),
+    )
+
+    with pytest.raises(IndexingError, match="exceeds model"):
+        await indexer.index_document(
             document_id=uuid4(),
-            upload_dir=MagicMock(),
-            provider=mock_provider,
-            vector_store=MagicMock(),
             collection_name="test",
             distance=DistanceMetric.COSINE,
             strategy=ChunkingStrategy.TOKEN,

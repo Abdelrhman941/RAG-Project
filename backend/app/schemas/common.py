@@ -16,7 +16,6 @@ class TopKQueryRequest(BaseModel):
     """
 
     model_config = ConfigDict(str_strip_whitespace=True)
-
     query: Annotated[str, Field(min_length=1)]
     top_k: Annotated[int, Field(ge=1)] | None = Field(
         default=None,

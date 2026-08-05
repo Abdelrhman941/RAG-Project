@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Generator
 from pathlib import Path
 
 from pypdf import PdfReader
@@ -22,7 +22,7 @@ class PdfParser(BaseParser):
         self._table_extractor = table_extractor
         self._ocr_threshold = ocr_threshold
 
-    def parse(self, path: Path) -> Iterator[str]:
+    def parse(self, path: Path) -> Generator[str, None, None]:
         try:
             reader = PdfReader(path)
         except (OSError, PdfReadError) as exc:

@@ -7,7 +7,6 @@ class SearchResult(BaseModel):
     """Provider-agnostic search result returned by the retrieval layer."""
 
     model_config = ConfigDict(frozen=True)
-
     document_id: UUID4
     chunk_id: UUID4
     chunk_index: Annotated[int, Field(ge=0)]

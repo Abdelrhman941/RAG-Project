@@ -25,7 +25,6 @@ class RetrievalResponse(BaseModel):
     """Envelope returned by the retrieval endpoint."""
 
     model_config = ConfigDict(frozen=True)
-
     query: str
     embedding_model: str
     total_results: Annotated[int, Field(ge=0)]

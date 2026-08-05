@@ -17,6 +17,7 @@ from ..embedders import (
     BaseRerankerProvider,
     BaseSparseEmbeddingProvider,
 )
+from ..generation import RetrievalServicePort
 from ..retrieval import SearchResult
 from ..vectorstores import BaseVectorStore
 
@@ -106,7 +107,7 @@ async def retrieve(
     return reranked_results[:top_k]
 
 
-class RetrievalServiceAdapter:
+class RetrievalServiceAdapter(RetrievalServicePort):
     """Adapter implementing the RetrievalServicePort interface."""
 
     def __init__(

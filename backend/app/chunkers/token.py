@@ -9,6 +9,22 @@ from .normalizer import normalize_text
 
 logger = logging.getLogger(__name__)
 
+# Module-level cache: (chunk_size, overlap) -> splitter instance.
+# RecursiveCharacterTextSplitter.from_tiktoken_encoder loads the tiktoken
+# BPE vocab on first call; caching avoids reloading it on every chunk()
+# invocation when the same config is reused across pages / documents.
+_splitter_cache: dict[tuple[int, int], RecursiveCharacterTextSplitter] = {}
+
+
+def _get_splitter(chunk_size: int, overlap: int) -> RecursiveCharacterTextSplitter:
+    key = (chunk_size, overlap)
+    if key not in _splitter_cache:
+        _splitter_cache[key] = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=chunk_size,
+            chunk_overlap=overlap,
+        )
+    return _splitter_cache[key]
+
 
 class RecursiveChunker(BaseChunker):
     """Token-aware recursive chunker with text normalization and small-chunk merging.
@@ -17,6 +33,9 @@ class RecursiveChunker(BaseChunker):
     tokenizer-aware length function. The splitter tries to preserve
     paragraphs, lines and sentences before falling back to characters,
     producing higher-quality chunks for RAG than a plain token splitter.
+
+    Splitter instances are cached at module level keyed by (chunk_size, overlap)
+    so the tiktoken BPE vocab is loaded at most once per unique configuration.
     """
 
     def chunk(
@@ -31,13 +50,11 @@ class RecursiveChunker(BaseChunker):
         import uuid
 
         if config.prompt_chunk_size is not None and config.prompt_overlap is not None:
-            parent_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=config.prompt_chunk_size,
-                chunk_overlap=config.prompt_overlap,
+            parent_splitter = _get_splitter(
+                config.prompt_chunk_size, config.prompt_overlap
             )
-            child_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=config.embedding_chunk_size,
-                chunk_overlap=config.embedding_overlap,
+            child_splitter = _get_splitter(
+                config.embedding_chunk_size, config.embedding_overlap
             )
 
             p_chunks = parent_splitter.split_text(text)
@@ -66,9 +83,8 @@ class RecursiveChunker(BaseChunker):
             yield from spans
 
         else:
-            splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=config.embedding_chunk_size,
-                chunk_overlap=config.embedding_overlap,
+            splitter = _get_splitter(
+                config.embedding_chunk_size, config.embedding_overlap
             )
             raw_chunks = splitter.split_text(text)
             raw_tuples = self._compute_offsets(raw_chunks, text)

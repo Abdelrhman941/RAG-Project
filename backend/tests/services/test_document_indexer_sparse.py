@@ -1,7 +1,6 @@
 from collections.abc import AsyncIterator, Sequence
-from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -10,7 +9,9 @@ from app.core import ChunkingStrategy, DistanceMetric, SourceType
 from app.embedders.base import BaseEmbeddingProvider, BaseSparseEmbeddingProvider
 from app.schemas.chunk import Chunk
 from app.schemas.sparse import SparseVector
-from app.services.document_indexer import index_document
+from app.services.document_chunker import DocumentChunkerService
+from app.services.document_embedder import DocumentEmbedderService
+from app.services.document_indexer import DocumentIndexerService
 from app.vectorstores.base import BaseVectorStore
 
 
@@ -64,31 +65,42 @@ async def test_index_document_with_sparse() -> None:
         )
     ]
 
-    async def mock_chunk_document(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
+    async def mock_chunk_gen(*args: Any, **kwargs: Any) -> AsyncIterator[Chunk]:
         for c in chunks:
             yield c
 
+    from unittest.mock import MagicMock
+
+    mock_chunker = MagicMock(spec=DocumentChunkerService)
+    mock_chunker.chunk_document = mock_chunk_gen
+
     dense_provider = MockDenseProvider()
     sparse_provider = MockSparseProvider()
+
+    mock_embedder = MagicMock(spec=DocumentEmbedderService)
+    # The default mock returns an AsyncMock which can be awaited,
+    # but let's give it proper return values.
+    mock_embedder.embed_chunks = AsyncMock(return_value=[[0.1, 0.2]])
+
     vector_store = AsyncMock(spec=BaseVectorStore)
     vector_store.get_existing_hashes.return_value = frozenset()
 
-    with patch(
-        "app.services.document_indexer.chunk_document",
-        new=mock_chunk_document,
-    ):
-        await index_document(
-            document_id=doc_id,
-            upload_dir=Path("/tmp"),
-            collection_name="col",
-            distance=DistanceMetric.COSINE,
-            provider=dense_provider,
-            vector_store=vector_store,
-            strategy=ChunkingStrategy.TOKEN,
-            embedding_chunk_size=100,
-            embedding_overlap=10,
-            sparse_provider=sparse_provider,
-        )
+    indexer = DocumentIndexerService(
+        chunker=mock_chunker,
+        embedder=mock_embedder,
+        provider=dense_provider,
+        vector_store=vector_store,
+        sparse_provider=sparse_provider,
+    )
+
+    await indexer.index_document(
+        document_id=doc_id,
+        collection_name="col",
+        distance=DistanceMetric.COSINE,
+        strategy=ChunkingStrategy.TOKEN,
+        embedding_chunk_size=100,
+        embedding_overlap=10,
+    )
 
     vector_store.upsert.assert_called_once()
     upserted = vector_store.upsert.call_args.kwargs["points"]

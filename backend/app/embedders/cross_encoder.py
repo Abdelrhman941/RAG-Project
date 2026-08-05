@@ -30,11 +30,8 @@ class CrossEncoderReranker(BaseRerankerProvider):
             return []
 
         pairs = [(query, text) for text in texts]
-
         raw_scores = self._model.predict(pairs)
-
         import torch
 
         scores = torch.sigmoid(torch.tensor(raw_scores)).tolist()
-
         return cast(list[float], scores)

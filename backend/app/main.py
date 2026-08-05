@@ -5,9 +5,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .api.v1 import api_v1_router
-from .core import DocumentError, get_settings
+from .core import DocumentError, get_settings, setup_logging
 
 settings = get_settings()
+setup_logging()
 
 
 @asynccontextmanager

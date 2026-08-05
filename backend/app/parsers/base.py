@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Generator
 from pathlib import Path
 
 
@@ -7,7 +7,7 @@ class BaseParser(ABC):
     """Abstract base class for document parsers."""
 
     @abstractmethod
-    def parse(self, path: Path) -> Iterator[str]:
+    def parse(self, path: Path) -> Generator[str, None, None]:
         """Parse a document into ordered text segments (yields pages/sections)."""
         raise NotImplementedError
 

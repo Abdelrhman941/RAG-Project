@@ -17,9 +17,6 @@ class CitationSchema(BaseModel):
     score: Annotated[float, Field(ge=0.0, le=1.0)]
 
 
-# ---------------------------------------------------------------------------
-# POST /api/v1/chat
-# ---------------------------------------------------------------------------
 class ChatRequest(TopKQueryRequest):
     """Client payload for `POST /api/v1/chat`.
 

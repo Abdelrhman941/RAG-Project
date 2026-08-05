@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Generator
 from pathlib import Path
 
 from charset_normalizer import from_path
@@ -26,8 +26,7 @@ class TxtParser(BaseParser):
                 text = str(match)
         except OSError as exc:
             raise ParsingError(f"Could not read text file '{path.name}'.") from exc
-
         return text.replace("\r\n", "\n").replace("\r", "\n")
 
-    def parse(self, path: Path) -> Iterator[str]:
+    def parse(self, path: Path) -> Generator[str, None, None]:
         yield self._read_text(path)

@@ -5,7 +5,6 @@ class SparseVector(BaseModel):
     """Domain model representing a sparse vector for hybrid search."""
 
     model_config = ConfigDict(frozen=True)
-
     indices: list[int]
     values: list[float]
 

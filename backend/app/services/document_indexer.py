@@ -1,5 +1,6 @@
-from pathlib import Path
 from uuid import UUID
+
+from anyio import to_thread
 
 from ..core import (
     ChunkingStrategy,
@@ -10,8 +11,8 @@ from ..core import (
 from ..embedders import BaseEmbeddingProvider, BaseSparseEmbeddingProvider
 from ..schemas import Chunk, IndexingResponse, SparseVector
 from ..vectorstores import BaseVectorStore, PointData, PointPayload
-from .document_chunker import chunk_document
-from .document_embedder import embed_chunks
+from .document_chunker import DocumentChunkerService
+from .document_embedder import DocumentEmbedderService
 
 
 def _build_points(
@@ -49,122 +50,121 @@ def _build_points(
     ]
 
 
-async def _process_batch(
-    batch: list[Chunk],
-    vector_store: BaseVectorStore,
-    collection_name: str,
-    provider: BaseEmbeddingProvider,
-    sparse_provider: BaseSparseEmbeddingProvider | None,
-) -> int:
-    """Process and upsert a batch of chunks."""
-    candidate_hashes = frozenset(c.content_hash for c in batch)
-    existing_hashes = await vector_store.get_existing_hashes(
-        collection_name, candidate_hashes
-    )
-    new_chunks = [c for c in batch if c.content_hash not in existing_hashes]
+class DocumentIndexerService:
+    def __init__(
+        self,
+        chunker: DocumentChunkerService,
+        embedder: DocumentEmbedderService,
+        provider: BaseEmbeddingProvider,
+        vector_store: BaseVectorStore,
+        sparse_provider: BaseSparseEmbeddingProvider | None = None,
+        ingestion_batch_size: int = 100,
+    ) -> None:
+        self._chunker = chunker
+        self._embedder = embedder
+        self._provider = provider
+        self._vector_store = vector_store
+        self._sparse_provider = sparse_provider
+        self._ingestion_batch_size = ingestion_batch_size
 
-    if not new_chunks:
-        return 0
-
-    vectors = await embed_chunks(new_chunks, provider)
-    sparse_vectors = None
-    if sparse_provider:
-        from anyio import to_thread
-
-        sparse_vectors = await to_thread.run_sync(
-            sparse_provider.embed_sparse_documents, [c.content for c in new_chunks]
+    async def _process_batch(
+        self,
+        batch: list[Chunk],
+        collection_name: str,
+    ) -> int:
+        """Process and upsert a batch of chunks."""
+        candidate_hashes = frozenset(c.content_hash for c in batch)
+        existing_hashes = await self._vector_store.get_existing_hashes(
+            collection_name, candidate_hashes
         )
-    points = _build_points(new_chunks, vectors, sparse_vectors)
+        new_chunks = [c for c in batch if c.content_hash not in existing_hashes]
 
-    indexed = await vector_store.upsert(
-        collection_name=collection_name,
-        points=points,
-    )
-    return indexed
+        if not new_chunks:
+            return 0
 
-
-async def index_document(
-    document_id: UUID,
-    upload_dir: Path,
-    provider: BaseEmbeddingProvider,
-    vector_store: BaseVectorStore,
-    collection_name: str,
-    distance: DistanceMetric,
-    strategy: ChunkingStrategy,
-    embedding_chunk_size: int,
-    embedding_overlap: int,
-    sparse_provider: BaseSparseEmbeddingProvider | None = None,
-    prompt_chunk_size: int | None = None,
-    prompt_overlap: int | None = None,
-) -> IndexingResponse:
-    """Parse -> Chunk -> Embed -> Upsert pipeline.
-
-    Pure orchestration: this function never touches Qdrant, HTTP, or
-    FastAPI. Vendor concerns stay inside `vector_store`; transport
-    concerns stay inside the API layer.
-    """
-    if embedding_chunk_size > provider.max_sequence_length:
-        raise IndexingError(
-            f"Requested embedding_chunk_size ({embedding_chunk_size}) exceeds model "
-            f"maximum context length ({provider.max_sequence_length})."
-        )
-
-    chunks_stream = chunk_document(
-        document_id=document_id,
-        upload_dir=upload_dir,
-        strategy=strategy,
-        embedding_chunk_size=embedding_chunk_size,
-        embedding_overlap=embedding_overlap,
-        prompt_chunk_size=prompt_chunk_size,
-        prompt_overlap=prompt_overlap,
-    )
-
-    dimension = provider.embedding_dimension
-    await vector_store.create_collection(
-        collection_name=collection_name,
-        dimension=dimension,
-        distance=distance,
-    )
-
-    await vector_store.delete_by_document(
-        collection_name=collection_name,
-        document_id=str(document_id),
-    )
-
-    from ..core import get_settings
-
-    settings = get_settings()
-
-    total_chunks = 0
-    total_indexed = 0
-    batch: list[Chunk] = []
-
-    async for chunk in chunks_stream:
-        batch.append(chunk)
-        if len(batch) >= settings.INGESTION_BATCH_SIZE:
-            indexed = await _process_batch(
-                batch, vector_store, collection_name, provider, sparse_provider
+        vectors = await self._embedder.embed_chunks(new_chunks)
+        sparse_vectors = None
+        if self._sparse_provider:
+            sparse_vectors = await to_thread.run_sync(
+                self._sparse_provider.embed_sparse_documents,
+                [c.content for c in new_chunks],
             )
+        points = _build_points(new_chunks, vectors, sparse_vectors)
+
+        indexed = await self._vector_store.upsert(
+            collection_name=collection_name,
+            points=points,
+        )
+        return indexed
+
+    async def index_document(
+        self,
+        document_id: UUID,
+        collection_name: str,
+        distance: DistanceMetric,
+        strategy: ChunkingStrategy,
+        embedding_chunk_size: int,
+        embedding_overlap: int,
+        prompt_chunk_size: int | None = None,
+        prompt_overlap: int | None = None,
+    ) -> IndexingResponse:
+        """Parse -> Chunk -> Embed -> Upsert pipeline."""
+        if embedding_chunk_size > self._provider.max_sequence_length:
+            raise IndexingError(
+                f"Requested embedding_chunk_size ({embedding_chunk_size}) "
+                f"exceeds model "
+                f"maximum context length ({self._provider.max_sequence_length})."
+            )
+
+        chunks_stream = self._chunker.chunk_document(
+            document_id=document_id,
+            strategy=strategy,
+            embedding_chunk_size=embedding_chunk_size,
+            embedding_overlap=embedding_overlap,
+            prompt_chunk_size=prompt_chunk_size,
+            prompt_overlap=prompt_overlap,
+        )
+
+        dimension = self._provider.embedding_dimension
+        await self._vector_store.create_collection(
+            collection_name=collection_name,
+            dimension=dimension,
+            distance=distance,
+        )
+
+        await self._vector_store.delete_by_document(
+            collection_name=collection_name,
+            document_id=str(document_id),
+        )
+
+        total_chunks = 0
+        total_indexed = 0
+        batch: list[Chunk] = []
+
+        async for chunk in chunks_stream:
+            batch.append(chunk)
+            if len(batch) >= self._ingestion_batch_size:
+                indexed = await self._process_batch(batch, collection_name)
+                total_indexed += indexed
+                total_chunks += len(batch)
+                batch = []
+
+        if batch:
+            indexed = await self._process_batch(batch, collection_name)
             total_indexed += indexed
             total_chunks += len(batch)
-            batch = []
 
-    if batch:
-        indexed = await _process_batch(
-            batch, vector_store, collection_name, provider, sparse_provider
+        if total_chunks == 0:
+            raise IndexingError(
+                f"Document '{document_id}' produced no chunks to index."
+            )
+
+        return IndexingResponse(
+            document_id=document_id,
+            collection_name=collection_name,
+            total_chunks=total_chunks,
+            indexed_points=total_indexed,
+            embedding_model=self._provider.model_name,
+            dimension=dimension,
+            status=DocumentStatus.INDEXED,
         )
-        total_indexed += indexed
-        total_chunks += len(batch)
-
-    if total_chunks == 0:
-        raise IndexingError(f"Document '{document_id}' produced no chunks to index.")
-
-    return IndexingResponse(
-        document_id=document_id,
-        collection_name=collection_name,
-        total_chunks=total_chunks,
-        indexed_points=total_indexed,
-        embedding_model=provider.model_name,
-        dimension=dimension,
-        status=DocumentStatus.INDEXED,
-    )

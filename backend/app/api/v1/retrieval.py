@@ -1,8 +1,7 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 
 from ...schemas import RetrievalRequest, RetrievalResponse, RetrievedChunk
-from ...services import retrieve
-from ..deps import EmbeddingProviderDep, SettingsDep, VectorStoreDep
+from ..deps import RetrievalServiceDep, SettingsDep
 
 retrieval_router = APIRouter(prefix="/retrieval", tags=["Retrieval"])
 
@@ -15,28 +14,23 @@ retrieval_router = APIRouter(prefix="/retrieval", tags=["Retrieval"])
 async def search(
     request: RetrievalRequest,
     settings: SettingsDep,
-    provider: EmbeddingProviderDep,
-    vector_store: VectorStoreDep,
+    retrieval_service: RetrievalServiceDep,
 ) -> RetrievalResponse:
     """Semantic search over the configured Qdrant collection.
 
     Pipeline: query -> embedding -> Qdrant search -> top-k ranked chunks.
     Generation is NOT performed here (that belongs to Sprint 9).
     """
-    # `TopKQueryRequest._resolve_top_k` guarantees this is never None once
-    # the request object exists — the field stays `int | None` in the
-    # schema only because pydantic can't narrow a validator's effect
-    # statically.
-    assert request.top_k is not None
+    if request.top_k is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="top_k must be provided.",
+        )
     top_k: int = request.top_k
 
-    hits = await retrieve(
+    hits = await retrieval_service.retrieve(
         query=request.query,
         top_k=top_k,
-        provider=provider,
-        vector_store=vector_store,
-        collection_name=settings.QDRANT_COLLECTION,
-        min_score=settings.MIN_SCORE,
     )
 
     results = [
@@ -53,7 +47,7 @@ async def search(
 
     return RetrievalResponse(
         query=request.query,
-        embedding_model=provider.model_name,
+        embedding_model=retrieval_service._provider.model_name,
         total_results=len(results),
         results=results,
     )
