@@ -18,6 +18,7 @@ class FileStorageService:
         destination: Path,
     ) -> int:
         """Save an uploaded file to disk in chunks to optimize memory."""
+        destination.parent.mkdir(parents=True, exist_ok=True)
         size_bytes = 0
         try:
             async with aiofiles.open(destination, "wb") as buffer:

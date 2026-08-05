@@ -4,7 +4,7 @@ from .document_indexer import DocumentIndexerService
 from .document_parser import DocumentParserService
 from .file_storage import FileStorageService
 from .generation_service import GenerationService
-from .retrieval_service import RetrievalServiceAdapter, retrieve
+from .retrieval_service import RetrievalServiceAdapter
 
 __all__ = [
     "GenerationService",
@@ -13,6 +13,5 @@ __all__ = [
     "DocumentEmbedderService",
     "DocumentIndexerService",
     "DocumentParserService",
-    "retrieve",
     "FileStorageService",
 ]

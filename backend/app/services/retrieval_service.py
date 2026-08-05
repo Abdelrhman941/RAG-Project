@@ -130,6 +130,11 @@ class RetrievalServiceAdapter(RetrievalServicePort):
         self._sparse_provider = sparse_provider
         self._reranker = reranker
 
+    @property
+    def embedding_model_name(self) -> str:
+        """Public accessor for the embedding model name used during retrieval."""
+        return self._provider.model_name
+
     async def retrieve(
         self,
         query: str,

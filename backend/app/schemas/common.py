@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-from ..core import get_settings
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TopKQueryRequest(BaseModel):
@@ -28,14 +26,3 @@ class TopKQueryRequest(BaseModel):
         if not value.strip():
             raise ValueError("query must not be empty or whitespace-only.")
         return value
-
-    @model_validator(mode="after")
-    def _resolve_top_k(self) -> "TopKQueryRequest":
-        settings = get_settings()
-        if self.top_k is None:
-            self.top_k = settings.DEFAULT_TOP_K
-        elif self.top_k > settings.MAX_TOP_K:
-            raise ValueError(
-                f"top_k must be less than or equal to {settings.MAX_TOP_K}."
-            )
-        return self

@@ -16,7 +16,7 @@ repos:
   # Ruff
   # ---------------------------------------------------------
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.16.0
     hooks:
       - id: ruff
         args: [--fix]
@@ -29,7 +29,8 @@ repos:
   # ---------------------------------------------------------
   - repo: local
     hooks:
-      # ---------------- Backend ----------------
+      # ---------- Backend ----------
+
       - id: mypy
         name: mypy
         entry: bash -c "cd backend && uv run mypy app"
@@ -37,15 +38,6 @@ repos:
         pass_filenames: false
         files: ^backend/
 
-      # ---------------- Frontend ----------------
-      - id: eslint
-        name: eslint
-        entry: bash -c "cd frontend && pnpm lint"
-        language: system
-        pass_filenames: false
-        files: ^frontend/
-
-      # ---------------- Git Push ----------------
       - id: pytest
         name: pytest
         entry: bash -c "cd backend && uv run pytest"
@@ -53,9 +45,19 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+      # ---------- Frontend ----------
+
+      - id: eslint
+        name: eslint
+        entry: bash -c "cd frontend && pnpm lint"
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+
+      # للتحقق فقط أن المشروع بيتبني
       - id: frontend-build
         name: frontend-build
-        entry: bash -c "cd frontend && pnpm build"
+        entry: bash -c "cd frontend && rm -rf dist && pnpm exec vite build --emptyOutDir"
         language: system
         pass_filenames: false
         stages: [pre-push]

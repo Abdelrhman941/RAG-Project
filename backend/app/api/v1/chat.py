@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 
 from ...schemas import ChatRequest, ChatResponse, CitationSchema
-from ..deps import GenerationServiceDep
+from ..deps import GenerationServiceDep, SettingsDep
 
 chat_router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -13,6 +13,7 @@ chat_router = APIRouter(prefix="/chat", tags=["Chat"])
 )
 async def chat(
     request: ChatRequest,
+    settings: SettingsDep,
     generation_service: GenerationServiceDep,
 ) -> ChatResponse:
     """RAG chat: retrieve context, build the prompt, ask the LLM, return the answer.
@@ -21,7 +22,8 @@ async def chat(
     Streaming, memory, multi-turn, history, sessions, and tool calling are
     explicitly out of scope for this endpoint (Sprint 9).
     """
-    result = await generation_service.generate(request.query, top_k=request.top_k)
+    top_k: int = request.top_k if request.top_k is not None else settings.DEFAULT_TOP_K
+    result = await generation_service.generate(request.query, top_k=top_k)
 
     citations = [
         CitationSchema(

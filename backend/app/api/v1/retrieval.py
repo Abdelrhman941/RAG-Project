@@ -21,12 +21,12 @@ async def search(
     Pipeline: query -> embedding -> Qdrant search -> top-k ranked chunks.
     Generation is NOT performed here (that belongs to Sprint 9).
     """
-    if request.top_k is None:
+    top_k: int = request.top_k if request.top_k is not None else settings.DEFAULT_TOP_K
+    if top_k > settings.MAX_TOP_K:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="top_k must be provided.",
+            detail=f"top_k must be ≤ {settings.MAX_TOP_K}.",
         )
-    top_k: int = request.top_k
 
     hits = await retrieval_service.retrieve(
         query=request.query,
@@ -47,7 +47,7 @@ async def search(
 
     return RetrievalResponse(
         query=request.query,
-        embedding_model=retrieval_service._provider.model_name,
+        embedding_model=retrieval_service.embedding_model_name,
         total_results=len(results),
         results=results,
     )

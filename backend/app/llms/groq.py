@@ -12,6 +12,7 @@ Responsibilities:
 
 from groq import AsyncGroq
 from groq import GroqError as GroqSDKError
+from groq.resources.chat import AsyncChat
 
 from ..core import LLMProviderError
 from .base import BaseLLMProvider, ProviderChatMessage
@@ -45,7 +46,8 @@ class GroqProvider(BaseLLMProvider):
     ) -> str:
         """Generate a completion using Groq."""
         try:
-            response = await self._client.chat.completions.create(
+            chat: AsyncChat = self._client.chat  # cached_property; annotate for Pylance
+            response = await chat.completions.create(
                 model=self._model,
                 messages=messages,  # type: ignore[arg-type]
                 temperature=(self._temperature if temperature is None else temperature),
