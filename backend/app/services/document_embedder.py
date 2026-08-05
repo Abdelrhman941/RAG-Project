@@ -60,6 +60,7 @@ async def embed_document(
         prompt_overlap=prompt_overlap,
     )
     from ..core.config import get_settings
+
     batch_size = get_settings().EMBEDDING_BATCH_SIZE
 
     total_chunks = 0
@@ -70,10 +71,10 @@ async def embed_document(
                 batch.append(await anext(chunks_gen))
         except StopAsyncIteration:
             pass
-        
+
         if not batch:
             break
-            
+
         await embed_chunks(batch, provider)
         total_chunks += len(batch)
     return EmbeddingResponse(
