@@ -10,12 +10,13 @@ repos:
       - id: check-merge-conflict
       - id: check-yaml
       - id: check-toml
+      - id: check-added-large-files
 
   # ---------------------------------------------------------
-  # Ruff (Backend)
+  # Ruff
   # ---------------------------------------------------------
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.0
+    rev: v0.13.0
     hooks:
       - id: ruff
         args: [--fix]
@@ -29,7 +30,6 @@ repos:
   - repo: local
     hooks:
       # ---------------- Backend ----------------
-
       - id: mypy
         name: mypy
         entry: bash -c "cd backend && uv run mypy app"
@@ -37,19 +37,25 @@ repos:
         pass_filenames: false
         files: ^backend/
 
-      # Enable later
-      # - id: pytest
-      #   name: pytest
-      #   entry: bash -c "cd backend && uv run pytest"
-      #   language: system
-      #   pass_filenames: false
-      #   stages: [pre-push]
-
       # ---------------- Frontend ----------------
-
       - id: eslint
         name: eslint
         entry: bash -c "cd frontend && pnpm lint"
         language: system
         pass_filenames: false
         files: ^frontend/
+
+      # ---------------- Git Push ----------------
+      - id: pytest
+        name: pytest
+        entry: bash -c "cd backend && uv run pytest"
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: frontend-build
+        name: frontend-build
+        entry: bash -c "cd frontend && pnpm build"
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
