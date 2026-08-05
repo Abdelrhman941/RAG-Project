@@ -120,9 +120,9 @@
 
 ## P7 — Post E2E v1 upgrades
 
-* [ ] PDF table support.
+* [x] PDF table support. *(done in P3)*
 * [ ] Better-than-character chunking.
-* [ ] OCR.
+* [x] OCR. *(done in P3)*
 * [ ] Layout detection support.
 * [ ] Figure extraction support.
 * [ ] Citation mapping support.
