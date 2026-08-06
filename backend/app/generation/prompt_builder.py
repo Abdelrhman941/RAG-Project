@@ -18,6 +18,7 @@ from collections.abc import Sequence
 
 from ..retrieval import SearchResult
 from .models import ChatMessage, ChatRole
+from .ports import PromptBuilderPort
 
 # ---------------------------------------------------------------------------
 # System prompt template
@@ -44,7 +45,7 @@ SYSTEM_PROMPT: str = (
 _EMPTY_CONTENT_PLACEHOLDER = "(empty)"
 
 
-class PromptBuilder:
+class PromptBuilder(PromptBuilderPort):
     """Builds chat messages for a RAG generation call.
 
     Responsibilities:

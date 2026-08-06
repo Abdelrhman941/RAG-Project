@@ -87,7 +87,7 @@ async def test_index_document_skips_already_indexed_chunks() -> None:
     indexer = _make_indexer(chunks, mock_store, mock_provider)
 
     mock_embed = AsyncMock(return_value=[[0.1] * 3])
-    indexer._embedder.embed_chunks = mock_embed
+    indexer._embedder.embed_chunks = mock_embed  # type: ignore[method-assign]
 
     await indexer.index_document(
         document_id=doc_id,
@@ -129,7 +129,7 @@ async def test_index_document_all_chunks_new_embeds_all() -> None:
     indexer = _make_indexer(chunks, mock_store, mock_provider)
 
     mock_embed = AsyncMock(return_value=[[0.1] * 3, [0.2] * 3])
-    indexer._embedder.embed_chunks = mock_embed
+    indexer._embedder.embed_chunks = mock_embed  # type: ignore[method-assign]
 
     response = await indexer.index_document(
         document_id=doc_id,

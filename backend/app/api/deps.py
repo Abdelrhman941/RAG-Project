@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Annotated, cast
+from typing import Annotated
 
 from fastapi import Depends
 
@@ -12,7 +12,7 @@ from ..embedders import (
     get_reranker,
     get_sparse_provider,
 )
-from ..generation import PromptBuilder, PromptBuilderPort
+from ..generation import PromptBuilder
 from ..llms import BaseLLMProvider, get_llm_provider
 from ..services import (
     DocumentChunkerService,
@@ -81,7 +81,7 @@ def get_generation_service(
 ) -> GenerationService:
     return GenerationService(
         retrieval_service=retrieval_service,
-        prompt_builder=cast(PromptBuilderPort, prompt_builder),
+        prompt_builder=prompt_builder,
         llm_provider=llm_provider,
         top_k=settings.DEFAULT_TOP_K,
     )

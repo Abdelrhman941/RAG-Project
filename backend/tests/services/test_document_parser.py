@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -22,7 +23,7 @@ async def test_parse_document_returns_text_and_source_type() -> None:
 
         mock_parser_instance = MagicMock()
 
-        def mock_parse_gen():
+        def mock_parse_gen() -> Iterator[str]:
             yield "Page 1 text"
 
         mock_parser_instance.parse.return_value = mock_parse_gen()

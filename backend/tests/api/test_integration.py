@@ -1,13 +1,18 @@
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_embedding_provider, get_vector_store
 from app.core import DistanceMetric
 from app.embedders.base import BaseEmbeddingProvider
+from app.embedders.factory import get_embedding_provider
 from app.main import app
-from app.vectorstores.base import BaseVectorStore, PointData
+from app.retrieval import SearchResult
+from app.vectorstores.base import BaseVectorStore
+from app.vectorstores.factory import get_vector_store
+from app.vectorstores.models import PointData
 
 client = TestClient(app)
 
@@ -25,7 +30,7 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
     def model_name(self) -> str:
         return "mock-model"
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
         return [[0.1] * self.embedding_dimension for _ in texts]
 
     def embed_query(self, text: str) -> list[float]:
@@ -33,8 +38,8 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
 
 
 class MockVectorStore(BaseVectorStore):
-    def __init__(self):
-        self.points = {}
+    def __init__(self) -> None:
+        self.points: dict[str, PointData] = {}
 
     async def get_existing_hashes(
         self, collection_name: str, candidate_hashes: frozenset[str]
@@ -49,7 +54,7 @@ class MockVectorStore(BaseVectorStore):
     async def delete_by_document(self, collection_name: str, document_id: str) -> None:
         pass
 
-    async def upsert(self, collection_name: str, points: list[PointData]) -> int:
+    async def upsert(self, collection_name: str, points: Sequence[PointData]) -> int:
         for p in points:
             self.points[str(p.id)] = p
         return len(points)
@@ -57,13 +62,12 @@ class MockVectorStore(BaseVectorStore):
     async def search(
         self,
         collection_name: str,
-        vector: list[float],
+        vector: Sequence[float],
         top_k: int = 5,
         *,
         min_score: float | None = None,
-        sparse_vector=None,
-    ) -> list:
-        from app.retrieval import SearchResult
+        sparse_vector: Any = None,
+    ) -> list[SearchResult]:
 
         return [
             SearchResult(
@@ -77,7 +81,9 @@ class MockVectorStore(BaseVectorStore):
             for p in self.points.values()
         ][:top_k]
 
-    async def mget(self, collection_name: str, ids: list[str]) -> list:
+    async def mget(
+        self, collection_name: str, ids: Sequence[str]
+    ) -> list[SearchResult]:
         return []
 
     async def delete_collection(self, collection_name: str) -> None:
@@ -91,7 +97,7 @@ class MockVectorStore(BaseVectorStore):
 
 
 @pytest.fixture
-def override_dependencies():
+def override_dependencies() -> Any:
     mock_store = MockVectorStore()
     mock_provider = MockEmbeddingProvider()
     app.dependency_overrides[get_vector_store] = lambda: mock_store
@@ -116,7 +122,7 @@ def sample_pdf(tmp_path: Path) -> Path:
     return pdf_path
 
 
-def test_full_rag_pipeline(override_dependencies, sample_pdf: Path) -> None:
+def test_full_rag_pipeline(override_dependencies: Any, sample_pdf: Path) -> None:
     # 1. Upload
     with sample_pdf.open("rb") as f:
         upload_resp = client.post(

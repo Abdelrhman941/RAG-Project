@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -15,8 +17,10 @@ async def test_chunk_document_propagates_source_type() -> None:
     from contextlib import asynccontextmanager
 
     @asynccontextmanager
-    async def mock_parse_cm(*args, **kwargs):
-        async def mock_parse_gen():
+    async def mock_parse_cm(
+        *args: Any, **kwargs: Any
+    ) -> AsyncIterator[tuple[AsyncIterator[str], SourceType]]:
+        async def mock_parse_gen() -> AsyncIterator[str]:
             for page in ["This is page one."]:
                 yield page
 
@@ -61,8 +65,10 @@ async def test_chunk_document_dedup_and_contiguous_index() -> None:
     from contextlib import asynccontextmanager
 
     @asynccontextmanager
-    async def mock_parse_cm(*args, **kwargs):
-        async def mock_parse_gen():
+    async def mock_parse_cm(
+        *args: Any, **kwargs: Any
+    ) -> AsyncIterator[tuple[AsyncIterator[str], SourceType]]:
+        async def mock_parse_gen() -> AsyncIterator[str]:
             for page in pages:
                 yield page
 
